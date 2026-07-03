@@ -135,24 +135,33 @@ section "5. Install Zebar Widgets (v3)"
 ZEBAR_SRC="$PROJECT_DIR/dotfiles/zebar"
 ZEBAR_V1="$HOME/.config/zebar"
 ZEBAR_V3="$HOME/.glzr/zebar"
+ZEBAR_PACKS="$ZEBAR_V3/packs/labwc-zebar"
 
-# Install main widget pack to v3 path
+# Install pack structure for zebar v3
+mkdir -p "$ZEBAR_PACKS/main"
 if [[ -d "$ZEBAR_SRC/main" ]]; then
-  rm -rf "$ZEBAR_V3/main"
-  cp -r "$ZEBAR_SRC/main" "$ZEBAR_V3/main"
-  pass "main statusbar → $ZEBAR_V3/main"
+  cp "$ZEBAR_SRC/main/index.html" "$ZEBAR_PACKS/main/"
+  cp "$ZEBAR_SRC/main/style.css" "$ZEBAR_PACKS/main/"
+  cp "$ZEBAR_SRC/main/zpack.json" "$ZEBAR_PACKS/main/" 2>/dev/null || true
+  pass "main statusbar → $ZEBAR_PACKS/main"
 fi
 
-# Copy zebar settings.json to v3 path
+# Create root zpack.json for the pack
+if [[ -f "$ZEBAR_SRC/main/zpack.json" ]]; then
+  cp "$ZEBAR_SRC/main/zpack.json" "$ZEBAR_PACKS/zpack.json"
+  pass "zpack.json → $ZEBAR_PACKS/"
+fi
+
+# Copy zebar settings.json
 if [[ -f "$ZEBAR_SRC/settings.json" ]]; then
   cp "$ZEBAR_SRC/settings.json" "$ZEBAR_V3/settings.json"
   pass "settings.json → $ZEBAR_V3/settings.json"
 fi
 
 # Copy to v1 path as fallback
+mkdir -p "$ZEBAR_V1/main"
 if [[ -d "$ZEBAR_SRC/main" ]]; then
-  rm -rf "$ZEBAR_V1/main"
-  cp -r "$ZEBAR_SRC/main" "$ZEBAR_V1/main"
+  cp -r "$ZEBAR_SRC/main"/* "$ZEBAR_V1/main/"
 fi
 if [[ -f "$ZEBAR_SRC/settings.json" ]]; then
   cp "$ZEBAR_SRC/settings.json" "$ZEBAR_V1/settings.json"

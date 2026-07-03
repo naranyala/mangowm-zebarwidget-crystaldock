@@ -263,8 +263,10 @@ menu_zebar() {
   show_header
   echo -e " ${BOLD}Zebar Widgets${NC}"
   echo
+  local ZEBAR_PACKS="$ZEBAR_V3/packs/labwc-zebar"
   echo "  Current status:"
-  echo "    V3 main:       $(check_mark "$ZEBAR_V3/main/index.html")"
+  echo "    Pack main:     $(check_mark "$ZEBAR_PACKS/main/index.html")"
+  echo "    Pack zpack:    $(check_mark "$ZEBAR_PACKS/zpack.json")"
   echo "    V3 settings:   $(check_mark "$ZEBAR_V3/settings.json")"
   echo "    V1 fallback:   $(check_mark "$ZEBAR_V1/main/index.html")"
   echo
@@ -282,18 +284,24 @@ menu_zebar() {
   case "$choice" in
     1)
       do_backup "zebar-main"
-      mkdir -p "$ZEBAR_V3" "$ZEBAR_V1"
-      rm -rf "$ZEBAR_V3/main" "$ZEBAR_V1/main"
-      cp -r "$PROJECT_DIR/dotfiles/zebar/main" "$ZEBAR_V3/main"
-      cp -r "$PROJECT_DIR/dotfiles/zebar/main" "$ZEBAR_V1/main"
+      mkdir -p "$ZEBAR_PACKS/main" "$ZEBAR_V1/main"
+      rm -rf "$ZEBAR_PACKS/main" "$ZEBAR_V1/main"
+      mkdir -p "$ZEBAR_PACKS/main"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/index.html" "$ZEBAR_PACKS/main/"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/style.css" "$ZEBAR_PACKS/main/"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/zpack.json" "$ZEBAR_PACKS/zpack.json" 2>/dev/null || true
+      cp -r "$PROJECT_DIR/dotfiles/zebar/main"/* "$ZEBAR_V1/main/"
       pass "Main statusbar reinstalled"
       ;;
     2)
       do_backup "zebar-all"
-      mkdir -p "$ZEBAR_V3" "$ZEBAR_V1" "$ZEBAR_V3/widgets" "$ZEBAR_V1/widgets"
-      rm -rf "$ZEBAR_V3/main" "$ZEBAR_V1/main"
-      cp -r "$PROJECT_DIR/dotfiles/zebar/main" "$ZEBAR_V3/main"
-      cp -r "$PROJECT_DIR/dotfiles/zebar/main" "$ZEBAR_V1/main"
+      mkdir -p "$ZEBAR_PACKS/main" "$ZEBAR_V1/main" "$ZEBAR_V3/widgets" "$ZEBAR_V1/widgets"
+      rm -rf "$ZEBAR_PACKS/main" "$ZEBAR_V1/main"
+      mkdir -p "$ZEBAR_PACKS/main"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/index.html" "$ZEBAR_PACKS/main/"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/style.css" "$ZEBAR_PACKS/main/"
+      cp "$PROJECT_DIR/dotfiles/zebar/main/zpack.json" "$ZEBAR_PACKS/zpack.json" 2>/dev/null || true
+      cp -r "$PROJECT_DIR/dotfiles/zebar/main"/* "$ZEBAR_V1/main/"
       for w in "$PROJECT_DIR/dotfiles/zebar/widgets"/*/; do
         [[ -d "$w" ]] && cp -r "$w" "$ZEBAR_V3/widgets/" && cp -r "$w" "$ZEBAR_V1/widgets/" 2>/dev/null || true
       done
