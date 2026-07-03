@@ -34,7 +34,16 @@ static volatile sig_atomic_t running = 1;
 
 /* Signal handler */
 static void signal_handler(int sig) {
-    running = 0;
+    if (sig == SIGHUP) {
+        char *home = getenv("HOME");
+        if (home) {
+            char path[256];
+            snprintf(path, sizeof(path), "%s/.config/labwc/themerc-override", home);
+            theme_load_from_ini(&state.theme, path);
+        }
+    } else {
+        running = 0;
+    }
 }
 
 /* Render dock widget (application icon) */
@@ -208,6 +217,8 @@ static void run_crystal_dock(crystal_dock_t *dock) {
 int main(int argc, char *argv[]) {
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
+    signal(SIGHUP, signal_handler);
+
     
     if (init_crystal_dock(&state) != 0) {
         fprintf(stderr, "Failed to initialize crystal dock\n");

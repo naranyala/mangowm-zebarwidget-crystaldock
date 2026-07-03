@@ -213,10 +213,13 @@ if [[ -d "$SESSION_DIR" ]]; then
 [Desktop Entry]
 Name=labwc
 Comment=Lab Wayland Compositor
-Exec=$LABWC_BIN
+Exec=labwc
+TryExec=labwc
 Type=Application
-DesktopNames=labwc
+DesktopNames=labwc;
 Keywords=wayland;compositor;labwc;
+X-GDM-SessionRegisters=true
+X-GDM-CanRunHeadless=true
 EOF
   sudo cp /tmp/labwc.desktop "$SESSION_FILE" 2>/dev/null && \
     sudo chmod 644 "$SESSION_FILE" && \
