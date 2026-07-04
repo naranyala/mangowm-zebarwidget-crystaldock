@@ -1,29 +1,27 @@
 #Api2
 
-include("battery.source")
-
 export button "battery-text" {
-  interval = 10000
+  interval = 2000
   style = "module_pill"
   class = "module"
-  tooltip = "Battery: " + Str(Level, 0) + "%\nStatus: " + If(Discharging, "Discharging", "Charging")
+  tooltip = "Battery: " + Str(XBatLvl, 0) + "%\nStatus: " + XBatStat
   action = PopUp("BatPopup")
 
   grid {
     style = "pill_grid"
     image {
-      value = If(Level > 90, "battery-full-symbolic",
-               If(Level > 60, "battery-good-symbolic",
-                If(Level > 20, "battery-low-symbolic",
+      value = If(XBatLvl > 90, "battery-full-symbolic",
+               If(XBatLvl > 60, "battery-good-symbolic",
+                If(XBatLvl > 20, "battery-low-symbolic",
                  "battery-empty-symbolic")))
     }
     progressbar "bat_prog" {
-      value = Level
+      value = XBatLvl
       style = "pill_progress"
       min = 0
       max = 100
     }
-    label { value = Str(Level, 0) + "%" }
+    label { value = Str(XBatLvl, 0) + "%" }
   }
 }
 
@@ -37,17 +35,13 @@ PopUp("BatPopup") {
     }
     label {
       style = "detail_value"
-      interval = 10000
-      value = "Battery " + Str(Level, 0) + "%\n" +
-        "Status: " + If(Discharging, "Discharging", "Charging") + "\n" +
-        "Time: " + If(Discharging,
-          If(Time > 60, Str(Time/60, 0) + "h " + Str(Time%60, 0) + "m left", Str(Time, 0) + " min left"),
-          If(Time > 60, Str(Time/60, 0) + "h " + Str(Time%60, 0) + "m to full", Str(Time, 0) + " min to full")
-        )
+      interval = 2000
+      value = "Battery " + Str(XBatLvl, 0) + "%\n" +
+        "Status: " + XBatStat
     }
     progressbar {
       style = "detail_progress"
-      value = Level
+      value = XBatLvl
       min = 0
       max = 100
     }

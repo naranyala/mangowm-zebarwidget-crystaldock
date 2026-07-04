@@ -1,11 +1,13 @@
 #Api2
 
 # Bluetooth widget — bluetooth status and toggle
-file("/bin/sh -c 'bluetoothctl show 2>/dev/null | grep Powered | awk \"{print \\$2}\" || echo no'") {
-  XBtPowered = Grab(First)
+scanner {
+  step = 5000
+  exec("/bin/sh -c 'bluetoothctl show 2>/dev/null | grep Powered | awk \"{print \\$2}\" || echo no'") {
+    XBtPowered = Grab(First)
+    XBtOn = RegEx("yes", XBtPowered)
+  }
 }
-
-Set XBtOn = RegEx("yes", XBtPowered)
 
 export button "bluetooth" {
   interval = 5000

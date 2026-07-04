@@ -1,33 +1,24 @@
 #Api2
 
 # Media Player — MPRIS controls with rich info
-file("/bin/sh -c 'playerctl metadata --format \"{\"artist\":\"%{artist}\",\"title\":\"%{title}\",\"album\":\"%{album}\",\"status\":\"$(playerctl status 2>/dev/null)\"}\" 2>/dev/null || echo {}'") {
-  XMediaJson = Grab(First)
+scanner {
+  step = 2000
+  exec("/bin/sh -c 'playerctl metadata --format \"{\"artist\":\"%{artist}\",\"title\":\"%{title}\",\"album\":\"%{album}\",\"status\":\"$(playerctl status 2>/dev/null)\"}\" 2>/dev/null || echo {}'") { XMediaJson = Grab(First) }
+  exec("/bin/sh -c 'playerctl metadata --format artist 2>/dev/null || echo none'") { XMediaArtist = Grab(First) }
+  exec("/bin/sh -c 'playerctl metadata --format title 2>/dev/null || echo none'") { XMediaTitle = Grab(First) }
+  exec("/bin/sh -c 'playerctl metadata --format album 2>/dev/null || echo none'") { XMediaAlbum = Grab(First) }
+  exec("/bin/sh -c 'playerctl status 2>/dev/null || echo none'") { XMediaStatus = Grab(First) }
+  exec("/bin/sh -c 'playerctl position 2>/dev/null || echo 0'") { XMediaPosition = Grab(First) }
+  exec("/bin/sh -c 'playerctl metadata --format \"%(mpris:length)\" 2>/dev/null || echo 0'") {
+    XMediaLength = Grab(First)
+    XMediaPosFmt = If(Val(XMediaLength) > 0,
+      Str(Val(XMediaPosition)/60, 0) + ":" + Pad(Str(Val(XMediaPosition)%60, 0), 2, "0") +
+      " / " + Str(Val(XMediaLength)/1000000/60, 0) + ":" + Pad(Str(Val(XMediaLength)/1000000%60, 0), 2, "0"),
+      "")
+  }
 }
 
-file("/bin/sh -c 'playerctl metadata --format artist 2>/dev/null || echo none'") {
-  XMediaArtist = Grab(First)
-}
-file("/bin/sh -c 'playerctl metadata --format title 2>/dev/null || echo none'") {
-  XMediaTitle = Grab(First)
-}
-file("/bin/sh -c 'playerctl metadata --format album 2>/dev/null || echo none'") {
-  XMediaAlbum = Grab(First)
-}
-file("/bin/sh -c 'playerctl status 2>/dev/null || echo none'") {
-  XMediaStatus = Grab(First)
-}
-file("/bin/sh -c 'playerctl position 2>/dev/null || echo 0'") {
-  XMediaPosition = Grab(First)
-}
-file("/bin/sh -c 'playerctl metadata --format \"%(mpris:length)\" 2>/dev/null || echo 0'") {
-  XMediaLength = Grab(First)
-}
 
-Set XMediaPosFmt = If(Val(XMediaLength) > 0,
-  Str(Val(XMediaPosition)/60, 0) + ":" + Pad(Str(Val(XMediaPosition)%60, 0), 2, "0") +
-  " / " + Str(Val(XMediaLength)/1000000/60, 0) + ":" + Pad(Str(Val(XMediaLength)/1000000%60, 0), 2, "0"),
-  "")
 
 export button "media-player" {
   interval = 2000

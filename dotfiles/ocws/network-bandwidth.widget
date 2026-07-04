@@ -1,0 +1,73 @@
+#Api2
+
+  export button "network-bandwidth" {
+    interval = 2000
+    style = "module_pill"
+    class = "module"
+    tooltip = If(XNetTotal > 0,
+      "Upload: " + Format("%.1f KB/s", XNetRateTx) + "  Download: " + Format("%.1f KB/s", XNetRateRx),
+      "Network not connected"
+    )
+    action = PopUp("NetBwPopup")
+    
+    grid {
+      style = "pill_grid"
+      image {
+        value = If(XNetTotal > 0,
+          If(XNetRateTx > 100, "network-wireless-signal-excellent-symbolic",
+           If(XNetRateTx > 10, "network-wireless-signal-good-symbolic",
+            If(XNetRateTx > 1, "network-wireless-signal-ok-symbolic",
+             "network-wireless-signal-weak-symbolic"))),
+          "network-wireless-offline-symbolic"
+        )
+      }
+      label {
+        value = If(XNetTotal > 0,
+          Format("%.1f KB/s", XNetRateTx + XNetRateRx),
+          "Offline")
+      }
+    }
+  }
+
+  PopUp("NetBwPopup") {
+    style = "detail_popup"
+    grid {
+      style = "detail_grid"
+      label {
+        value = "Network Bandwidth"
+        style = "detail_header"
+      }
+      label {
+        style = "detail_value"
+        interval = 2000
+        value = If(XNetTotal > 0,
+          "Upload: " + Format("%.1f KB/s", XNetRateTx) + "\n" +
+          "Download: " + Format("%.1f KB/s", XNetRateRx) + "\n" +
+          "Total Data: " + Format("%.1f MB", XNetTotal/1024/1024),
+          "Not connected"
+        )
+      }
+      label {
+        value = "Click to open network monitor"
+        style = "detail_hint"
+        action = ExecTerm("nmtui")
+      }
+    }
+  }
+
+#CSS
+
+button#network-bandwidth {
+  min-width: 140px;
+  min-height: 0px;
+  padding: 4px 8px;
+}
+
+button#network-bandwidth label {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+label.detail_hint {
+  font-size: 10px;
+}

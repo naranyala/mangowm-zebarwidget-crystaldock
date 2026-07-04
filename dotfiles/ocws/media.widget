@@ -1,16 +1,17 @@
 #Api2
 
 # Media widget — MPRIS player controls
-file("/bin/sh -c 'playerctl metadata --format artist 2>/dev/null || echo none'") {
-  XArtist = Grab(First)
-}
-
-file("/bin/sh -c 'playerctl metadata --format title 2>/dev/null || echo none'") {
-  XTitle = Grab(First)
-}
-
-file("/bin/sh -c 'playerctl status 2>/dev/null || echo none'") {
-  XStatus = Grab(First)
+scanner {
+  step = 2000
+  exec("/bin/sh -c 'playerctl metadata --format artist 2>/dev/null || echo none'") {
+    XArtist = Grab(First)
+  }
+  exec("/bin/sh -c 'playerctl metadata --format title 2>/dev/null || echo none'") {
+    XTitle = Grab(First)
+  }
+  exec("/bin/sh -c 'playerctl status 2>/dev/null || echo none'") {
+    XStatus = Grab(First)
+  }
 }
 
 export button "media" {
@@ -20,9 +21,7 @@ export button "media" {
   tooltip = If(XStatus != "none",
     XArtist + " — " + XTitle + "\n" + XStatus,
     "No media playing")
-  action = If(XStatus = "Playing", Exec("playerctl pause"),
-           If(XStatus = "Paused", Exec("playerctl play"),
-            Exec("playerctl play")))
+  action = PopUp("MediaPopup")
   action[scroll_up] = Exec("playerctl position 5+")
   action[scroll_down] = Exec("playerctl position 5-")
   action[middle] = Exec("playerctl next")
@@ -38,4 +37,50 @@ export button "media" {
   }
 }
 
+PopUp("MediaPopup") {
+  style = "detail_popup"
+  grid {
+    style = "detail_grid"
+    label {
+      value = "Media Controls"
+      style = "detail_header"
+    }
+    image {
+      value = "/tmp/ocws-cover.jpg"
+      interval = 2000
+      style = "media_cover"
+    }
+    label {
+      style = "detail_value"
+      interval = 2000
+      value = If(XStatus != "none", XArtist + "\n" + XTitle, "No media playing")
+    }
+    grid {
+      style = "detail_button_row"
+      button {
+        value = "media-skip-backward-symbolic"
+        action = Exec("playerctl previous")
+      }
+      button {
+        value = If(XStatus = "Playing", "media-playback-pause-symbolic", "media-playback-start-symbolic")
+        action = Exec("playerctl play-pause")
+        interval = 2000
+      }
+      button {
+        value = "media-skip-forward-symbolic"
+        action = Exec("playerctl next")
+      }
+    }
+  }
+}
+
 #CSS
+
+image.media_cover {
+  min-width: 120px;
+  min-height: 120px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 10px;
+  -GtkWidget-align: 0.5;
+}

@@ -1,11 +1,13 @@
 #Api2
 
 # Power Profile — switch between performance/balanced/power-saver
-file("/bin/sh -c 'powerprofilesctl get 2>/dev/null || echo auto'") {
-  XPowerRaw = Grab(First)
+scanner {
+  step = 10000
+  exec("/bin/sh -c 'powerprofilesctl get 2>/dev/null || echo auto'") {
+    XPowerRaw = Grab(First)
+    XPowerProfile = $XPowerRaw
+  }
 }
-
-Set XPowerProfile = $XPowerRaw
 
 Function XPowerIcon(profile) {
   If(profile = "performance", "power-profile-performance-symbolic",

@@ -1,0 +1,45 @@
+#Api2
+
+scanner {
+  step = 2000
+  exec("ocws-sysmon") {
+    SysMonLine = Grab(First)
+    
+    If (RegEx("^BAT_LVL=", SysMonLine)) { XBatLvl = Val(Extract(SysMonLine, "BAT_LVL=([0-9]+)")) }
+    If (RegEx("^BAT_STAT=", SysMonLine)) { 
+      XBatStat = Extract(SysMonLine, "BAT_STAT=([a-zA-Z]+)") 
+      XBatDischarging = (XBatStat = "Discharging")
+    }
+    
+    If (RegEx("^MEM_USED=", SysMonLine)) { XMemUsed = Val(Extract(SysMonLine, "MEM_USED=([0-9]+)")) }
+    If (RegEx("^MEM_TOT=", SysMonLine)) { XMemTot = Val(Extract(SysMonLine, "MEM_TOT=([0-9]+)")) }
+    If (RegEx("^MEM_PCT=", SysMonLine)) { XMemPct = Val(Extract(SysMonLine, "MEM_PCT=([0-9.]+)")) }
+    
+    If (RegEx("^NET_RX=", SysMonLine)) { XNetCurRx = Val(Extract(SysMonLine, "NET_RX=([0-9]+)")) }
+    If (RegEx("^NET_TX=", SysMonLine)) { XNetCurTx = Val(Extract(SysMonLine, "NET_TX=([0-9]+)")) }
+    
+    If (RegEx("^WIFI_STATE=", SysMonLine)) { XNetState = Extract(SysMonLine, "WIFI_STATE=([a-zA-Z]+)") }
+    If (RegEx("^BT_STATE=", SysMonLine)) { XBtState = Extract(SysMonLine, "BT_STATE=([a-zA-Z]+)") }
+    If (RegEx("^BRIGHTNESS=", SysMonLine)) { XBrightness = Val(Extract(SysMonLine, "BRIGHTNESS=([0-9]+)")) }
+    
+    If (RegEx("^CPU_TOT=", SysMonLine)) { XCpuCurTot = Val(Extract(SysMonLine, "CPU_TOT=([0-9]+)")) }
+    If (RegEx("^CPU_IDLE=", SysMonLine)) { XCpuCurIdl = Val(Extract(SysMonLine, "CPU_IDLE=([0-9]+)")) }
+    
+    If (RegEx("^TEMP=", SysMonLine)) { 
+      XTemp = Val(Extract(SysMonLine, "TEMP=([0-9]+)")) 
+      
+      # Since TEMP is the last line printed by ocws-sysmon, we can do calculations here!
+      XNetRateRx = If(XNetPrevRx = 0, 0, (XNetCurRx - XNetPrevRx) / 2048)
+      XNetRateTx = If(XNetPrevTx = 0, 0, (XNetCurTx - XNetPrevTx) / 2048)
+      XNetPrevRx = XNetCurRx
+      XNetPrevTx = XNetCurTx
+      XNetTotal = XNetCurRx + XNetCurTx
+      
+      XCpuTotDiff = XCpuCurTot - XCpuPrevTot
+      XCpuIdlDiff = XCpuCurIdl - XCpuPrevIdl
+      XCpuLoad = If(XCpuTotDiff = 0, 0, 100 * (XCpuTotDiff - XCpuIdlDiff) / XCpuTotDiff)
+      XCpuPrevTot = XCpuCurTot
+      XCpuPrevIdl = XCpuCurIdl
+    }
+  }
+}

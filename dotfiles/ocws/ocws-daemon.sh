@@ -8,6 +8,9 @@
 pkill -f "ocws-daemon.sh" 2>/dev/null
 sleep 0.1
 
+# Remove previous state files
+rm -f /tmp/ocws-state {{ rm -f /tmp/ocws-current-song
+
 update_volume() {
     RAW=$(wpctl get-volume @DEFAULT_SINK@ 2>/dev/null || echo "Volume: 0.00")
     VOL=$(echo "$RAW" | grep -oP '(?<=Volume: )[0-9.]+' || echo "0.00")
@@ -42,6 +45,32 @@ if command -v inotifywait >/dev/null 2>&1; then
         # Listen for backlight file changes directly from kernel
         inotifywait -m -e modify /sys/class/backlight/*/brightness 2>/dev/null | while read -r line; do
             update_brightness
+        done
+    ) &
+fi
+
+  # 3. Media Art Listener
+if command -v playerctl >/dev/null 2>&1; then
+    (
+        while true; do
+            playerctl metadata -F mpris:artUrl 2>/dev/null | while read -r ART_URL; do
+                # Only process URLs and handle download errors gracefully
+                if [[ "$ART_URL" == file://* ]]; then
+                    if cp "${ART_URL#file://}" /tmp/ocws-cover.jpg 2>/dev/null; then
+                        echo "Media art downloaded: $ART_URL" >&2
+                    fi
+                elif [[ "$ART_URL" == http* ]]; then
+                    # Download with timeout and retry limit
+                    if curl -sSL --max-time 10 --connect-timeout 5 "$ART_URL" -o /tmp/ocws-cover.jpg 2>/dev/null && [[ -f /tmp/ocws-cover.jpg ]]; then
+                        echo "Media art downloaded: $ART_URL" >&2
+                    else
+                        rm -f /tmp/ocws-cover.jpg >&2
+                    fi
+                else
+                    rm -f /tmp/ocws-cover.jpg 2>/dev/null
+                fi
+            done
+            sleep 60
         done
     ) &
 fi

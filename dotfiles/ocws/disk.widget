@@ -1,22 +1,21 @@
 #Api2
 
 # Disk Usage widget — monitor disk space and I/O
-file("/bin/sh -c 'df -h / 2>/dev/null | tail -1'") {
-  XDiskRaw = Grab(First)
+scanner {
+  step = 5000
+  exec("/bin/sh -c 'df -h / 2>/dev/null | tail -1'") {
+    XDiskRaw = Grab(First)
+    XDiskUsed  = Extract($XDiskRaw, "([0-9]+[GMK])")
+    XDiskTotal = Extract($XDiskRaw, "[0-9]+[GMK][\t ]+([0-9]+[GMK])")
+    XDiskPct   = Val(Extract($XDiskRaw, "([0-9]+)%"))
+  }
+  file("/proc/diskstats") {
+    XDiskReadSec  = RegEx("sda [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*([0-9]+)", Sum)
+    XDiskWriteSec = RegEx("sda [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*([0-9]+)", Sum)
+    XDiskReadRate = If(XDiskReadSec.time > 0, (XDiskReadSec - XDiskReadSec.pval) / XDiskReadSec.time * 512, 0)
+    XDiskWriteRate = If(XDiskWriteSec.time > 0, (XDiskWriteSec - XDiskWriteSec.pval) / XDiskWriteSec.time * 512, 0)
+  }
 }
-
-Set XDiskUsed  = Extract($XDiskRaw, "([0-9]+[GMK])")
-Set XDiskTotal = Extract($XDiskRaw, "[0-9]+[GMK][\t ]+([0-9]+[GMK])")
-Set XDiskPct   = Val(Extract($XDiskRaw, "([0-9]+)%"))
-
-# Disk I/O from /proc/diskstats (read/write sectors)
-file("/proc/diskstats") {
-  XDiskReadSec  = RegEx("sda [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*([0-9]+)", Sum)
-  XDiskWriteSec = RegEx("sda [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*[0-9]+ [\t ]*([0-9]+)", Sum)
-}
-
-Set XDiskReadRate = If(XDiskReadSec.time > 0, (XDiskReadSec - XDiskReadSec.pval) / XDiskReadSec.time * 512, 0)
-Set XDiskWriteRate = If(XDiskWriteSec.time > 0, (XDiskWriteSec - XDiskWriteSec.pval) / XDiskWriteSec.time * 512, 0)
 
 export button "disk" {
   interval = 5000

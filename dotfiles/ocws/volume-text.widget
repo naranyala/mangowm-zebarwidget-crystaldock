@@ -1,11 +1,13 @@
 #Api2
 
-file("/bin/sh -c 'wpctl get-volume @DEFAULT_SINK@ 2>/dev/null'") {
-  XVolRaw = Grab(First)
+scanner {
+  step = 2000
+  exec("/bin/sh -c 'wpctl get-volume @DEFAULT_SINK@ 2>/dev/null'") {
+    XVolRaw = Grab(First)
+    XVolLevel = Val(RegEx("Volume: ([0-9.]+)", XVolRaw)) * 100
+    XVolMuted = RegEx("MUTED", XVolRaw)
+  }
 }
-
-Set XVolLevel = Val(RegEx("Volume: ([0-9.]+)", XVolRaw)) * 100
-Set XVolMuted = RegEx("MUTED", XVolRaw)
 
 export button "volume-text" {
   interval = 2000

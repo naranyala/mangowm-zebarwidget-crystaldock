@@ -6,16 +6,14 @@
 # -------------------------------------------------------------------
 
 # Data Sources
-file("/bin/sh -c 'wpctl get-volume @DEFAULT_SINK@ 2>/dev/null'") { XVolRaw = Grab(First) }
-Set XVolLevel = Val(RegEx("Volume: ([0-9.]+)", XVolRaw)) * 100
-Set XVolMuted = RegEx("MUTED", XVolRaw)
-
-file("/bin/sh -c 'brightnessctl -m | cut -d, -f4 | tr -d % 2>/dev/null || echo 100'") { XBrightness = Val(Grab(First)) }
-
-file("/bin/sh -c 'cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1 || echo 100'") { XBatteryLevel = Val(Grab(First)) }
-
-file("/bin/sh -c 'nmcli -t -f STATE g 2>/dev/null || echo unknown'") { XNetState = Grab(First) }
-file("/bin/sh -c 'rfkill check bluetooth -J 2>/dev/null | grep unblocked >/dev/null && echo On || echo Off'") { XBtState = Grab(First) }
+scanner {
+  step = 2000
+  exec("/bin/sh -c 'wpctl get-volume @DEFAULT_SINK@ 2>/dev/null'") { 
+    XVolRaw = Grab(First)
+    XVolLevel = Val(RegEx("Volume: ([0-9.]+)", XVolRaw)) * 100
+    XVolMuted = RegEx("MUTED", XVolRaw)
+  }
+}
 
 # -------------------------------------------------------------------
 # The Button (On the Bar)
@@ -31,7 +29,7 @@ export button "ocws-control-center" {
     style = "pill_grid"
     label { value = "󰤨 " + If(XNetState="connected", "WiFi", "Offline") }
     label { value = "  󰂯 " + XBtState }
-    label { value = "  󰁹 " + Str(XBatteryLevel, 0) + "%" }
+    label { value = "  󰁹 " + Str(XBatLvl, 0) + "%" }
   }
 }
 

@@ -128,7 +128,7 @@ Private {
 
   TriggerAction "calendar-reset", XCalInit()
 
-  Popup("XCal") {
+  window "XCal" window_handler {
     style = "cal_popup_grid"
     action[MiddleClick] = XCalToday()
     action[ScrollUp] = XCalBuild(YearMonth-1)
@@ -239,6 +239,11 @@ label#cal_cell_other {
   min-width: 30px;
   min-height: 30px;
   border:  solid 1px rgba(0,0,0,0);
+}
+
+label#cal_cell_days {
+  color: alpha(@theme_text_color,0.7);
+  font-weight: bold;
 }
 
 label#cal_cell_today {

@@ -1,0 +1,9 @@
+# Static widgets included in the base OCWS configuration
+include("launcher.widget")
+include("workspaces.widget")
+include("clock.widget")
+include("media-player.widget")
+include("tray.widget")
+include("ocws-control-center.widget")
+include("keybinds.widget")
+include("showdesktop.widget")

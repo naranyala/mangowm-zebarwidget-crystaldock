@@ -61,9 +61,9 @@ Private {
     item(GT("Forget"), WifiForget(Extract(WidgetId(),"(.*)_grid")) );
   }
 
-  PopUp "XWifiWindow" {
-    style = "XWifiPopup"
-    grid "XWifiFrame" {
+   window "XWifiWindow" window_handler {
+     style = "XWifiPopup"
+     grid "XWifiFrame" {
       style = "XWifiFrame"
       label {
         value = "Wifi"

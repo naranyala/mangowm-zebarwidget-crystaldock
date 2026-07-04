@@ -1,15 +1,16 @@
 #Api2
 
 # Clipboard Widget — clipboard history
-file("/bin/sh -c 'wl-paste --list 2>/dev/null | head -5 || echo none'") {
-  XClipEntries = Grab(First)
+scanner {
+  step = 3000
+  exec("/bin/sh -c 'wl-paste --list 2>/dev/null | head -5 || echo none'") {
+    XClipEntries = Grab(First)
+    XClipCount = Val(RegEx("^text/plain", XClipEntries, Sum))
+  }
+  exec("/bin/sh -c 'wl-paste 2>/dev/null | head -c 50 || echo none'") {
+    XClipCurrent = Grab(First)
+  }
 }
-
-file("/bin/sh -c 'wl-paste 2>/dev/null | head -c 50 || echo none'") {
-  XClipCurrent = Grab(First)
-}
-
-Set XClipCount = Val(RegEx("^text/plain", XClipEntries, Sum))
 
 export button "clipboard" {
   interval = 3000

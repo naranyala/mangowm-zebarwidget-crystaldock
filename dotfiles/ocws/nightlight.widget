@@ -1,8 +1,11 @@
 #Api2
 
 # Night Light Widget — toggle blue light filter
-file("/bin/sh -c 'pgrep -x gammastep >/dev/null && echo on || echo off'") {
-  XNightLight = Grab(First)
+scanner {
+  step = 10000
+  exec("/bin/sh -c 'pgrep -x gammastep >/dev/null && echo on || echo off'") {
+    XNightLight = Grab(First)
+  }
 }
 
 export button "nightlight" {

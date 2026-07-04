@@ -148,20 +148,22 @@ render_template() {
         local var_name="${BASH_REMATCH[1]}"
         local var_value=""
 
-        case "$var_name" in
-            THEME_NAME)      var_value=$(ini_get "meta.name" "$(basename "$theme_file" .ini)" ) ;;
-            COLOR_BG)        var_value=$(ini_get "colors.bg" "#1e1e2e") ;;
-            COLOR_FG)        var_value=$(ini_get "colors.fg" "#cdd6f4") ;;
-            COLOR_SURFACE)   var_value=$(ini_get "colors.surface" "#1e1e2e") ;;
-            COLOR_BORDER)    var_value=$(ini_get "colors.border" "#45475a") ;;
-            COLOR_ACCENT)    var_value=$(ini_get "colors.accent" "#89b4fa") ;;
-            COLOR_URGENT)     var_value=$(ini_get "colors.urgent" "#f38ba8") ;;
-            COLOR_OK)        var_value=$(ini_get "colors.ok" "#a6e3a1") ;;
-            OCWS_BLUR)       var_value=$(ini_get "ocws.blur" "5") ;;
-            OCWS_BORDER)     var_value=$(ini_get "ocws.border" "1") ;;
-            OCWS_RADIUS)     var_value=$(ini_get "ocws.radius" "8") ;;
-            OCWS_SHADOW)     var_value=$(ini_get "ocws.shadow" "4") ;;
-            *) warn "Unknown template variable: {{$var_name}}" ;;
+                case "$var_name" in
+                    THEME_NAME)      var_value=$(ini_get "meta.name" "$(basename "$theme_file" .ini)" ) ;;
+                    COLOR_BG)        var_value=$(ini_get "colors.bg" "#1e1e2e") ;;
+                    COLOR_FG)        var_value=$(ini_get "colors.fg" "#cdd6f4") ;;
+                    COLOR_SURFACE)   var_value=$(ini_get "colors.surface" "#1e1e2e") ;;
+                    COLOR_BORDER)    var_value=$(ini_get "colors.border" "#45475a") ;;
+                    COLOR_ACCENT)    var_value=$(ini_get "colors.accent" "#89b4fa") ;;
+                    COLOR_URGENT)     var_value=$(ini_get "colors.urgent" "#f38ba8") ;;
+                    COLOR_OK)        var_value=$(ini_get "colors.ok" "#a6e3a1") ;;
+                    OCWS_BLUR)       var_value=$(ini_get "ocws.blur" "5") ;;
+                    OCWS_BORDER)     var_value=$(ini_get "ocws.border" "1") ;;
+                    OCWS_RADIUS)     var_value=$(ini_get "ocws.radius" "8") ;;
+                    OCWS_SHADOW)     var_value=$(ini_get "ocws.shadow" "4") ;;
+                    ICON_THEME)      var_value=$(ini_get "icons.theme" "") ;;
+                    FONT_MONO)       var_value=$(ini_get "fonts.mono" "Noto Sans Mono CJK SC:hilight=Filled") ;;
+                    *) warn "Unknown template variable: {{$var_name}}" ;;
         esac
 
         # Always replace to prevent infinite loops on empty/unknown variables

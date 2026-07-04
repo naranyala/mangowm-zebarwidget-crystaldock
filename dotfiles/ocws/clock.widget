@@ -15,7 +15,7 @@ Private {
     action = {
       If reset_on_popup
         EmitTrigger("calendar-reset")
-      PopUp("Xcal")
+      PopUp("XCal")
     }
 
     grid {
