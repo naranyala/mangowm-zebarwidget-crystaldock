@@ -1,0 +1,34 @@
+#Api2
+
+# Media widget — MPRIS player controls
+file("/bin/sh -c 'playerctl metadata --format artist 2>/dev/null || echo none'") {
+  XArtist = Grab(First)
+}
+
+file("/bin/sh -c 'playerctl metadata --format title 2>/dev/null || echo none'") {
+  XTitle = Grab(First)
+}
+
+file("/bin/sh -c 'playerctl status 2>/dev/null || echo none'") {
+  XStatus = Grab(First)
+}
+
+export button "media" {
+  interval = 2000
+  style = "module"
+  class = "module"
+  value = If(XStatus = "Playing", "media-playback-pause-symbolic",
+           If(XStatus = "Paused", "media-playback-start-symbolic",
+            "multimedia-audio-player-symbolic"))
+  tooltip = If(XStatus != "none",
+    XArtist + " — " + XTitle + "\n" + XStatus,
+    "No media playing")
+  action = If(XStatus = "Playing", Exec("playerctl pause"),
+           If(XStatus = "Paused", Exec("playerctl play"),
+            Exec("playerctl play")))
+  action[scroll_up] = Exec("playerctl position 5+")
+  action[scroll_down] = Exec("playerctl position 5-")
+  action[middle] = Exec("playerctl next")
+}
+
+#CSS

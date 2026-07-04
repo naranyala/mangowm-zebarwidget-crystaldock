@@ -1,0 +1,21 @@
+#Api2
+
+# Bluetooth widget — bluetooth status and toggle
+file("/bin/sh -c 'bluetoothctl show 2>/dev/null | grep Powered | awk \"{print \\$2}\" || echo no'") {
+  XBtPowered = Grab(First)
+}
+
+Set XBtOn = RegEx("yes", XBtPowered)
+
+export button "bluetooth" {
+  interval = 5000
+  style = "module"
+  class = "module"
+  value = If(XBtOn, "bluetooth-active-symbolic", "bluetooth-disabled-symbolic")
+  tooltip = If(XBtOn, "Bluetooth: On", "Bluetooth: Off")
+  action = Exec("bluetoothctl power on || bluetoothctl power off")
+  action[scroll_up] = Exec("bluetoothctl power on")
+  action[scroll_down] = Exec("bluetoothctl power off")
+}
+
+#CSS

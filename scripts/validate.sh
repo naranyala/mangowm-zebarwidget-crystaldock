@@ -101,11 +101,20 @@ fi
 
 # Check for unescaped & in XML (causes parse errors)
 if [ -f "$CONFIG_DIR/rc.xml" ]; then
-  UNESCAPED=$(grep -n '&&' "$CONFIG_DIR/rc.xml" 2>/dev/null | grep -v '&amp;' | head -1)
+  UNESCAPED=$(grep -n '&&' "$CONFIG_DIR/rc.xml" 2>/dev/null | grep -v '&amp;' | head -1 || true)
   if [ -n "$UNESCAPED" ]; then
     fail "rc.xml: unescaped '&' at $(echo "$UNESCAPED" | cut -d: -f1) — use &amp; in XML"
   else
     pass "rc.xml: XML entities OK"
+  fi
+fi
+
+# Check for hardware cursor fix (wlroots click bugs)
+if [ -f "$CONFIG_DIR/environment" ]; then
+  if grep -q "^WLR_NO_HARDWARE_CURSORS=1" "$CONFIG_DIR/environment"; then
+    pass "environment: software cursors enabled (fixes click bugs)"
+  else
+    warn "environment: WLR_NO_HARDWARE_CURSORS=1 missing (can cause click alignment bugs)"
   fi
 fi
 

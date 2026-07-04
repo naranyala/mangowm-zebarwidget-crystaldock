@@ -175,10 +175,15 @@ menu_labwc_config() {
         ;;
       2)
         if [[ -f "$PROJECT_DIR/dotfiles/labwc/rc.xml" ]]; then
-          do_backup "rc.xml"
-          cp "$PROJECT_DIR/dotfiles/labwc/rc.xml" "$CONFIG_DIR/rc.xml"
-          pass "rc.xml installed"
-          running labwc && labwc --reconfigure 2>/dev/null
+          CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$PROJECT_DIR/dotfiles/labwc/rc.xml")
+          if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+            warn "Source rc.xml has broken Client context (Left Press) — skipping install"
+          else
+            do_backup "rc.xml"
+            cp "$PROJECT_DIR/dotfiles/labwc/rc.xml" "$CONFIG_DIR/rc.xml"
+            pass "rc.xml installed"
+            running labwc && labwc --reconfigure 2>/dev/null
+          fi
         else
           warn "source not found: dotfiles/labwc/rc.xml"
         fi

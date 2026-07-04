@@ -5,14 +5,35 @@ include("cpu.source")
 export label "cpu-text" {
   interval = 1000
   style = If(XCpuPresent, "cpu-text", "hidden")
+  class = "module"
   value = "CPU " + Str(XCpuUtilization*100, 0) + "%"
   tooltip = "CPU Usage: " + Str(XCpuUtilization*100, 1) + "%"
-  action = ExecTerm("top")
+  action = PopUp("CpuPopup")
+}
+
+PopUp("CpuPopup") {
+  style = "detail_popup"
+  grid {
+    style = "detail_grid"
+    label {
+      value = "CPU Monitor"
+      style = "detail_header"
+    }
+    label {
+      style = "detail_value"
+      interval = 1000
+      value = "CPU " + Str(XCpuUtilization*100, 0) + "%"
+    }
+    label {
+      value = "Click to open htop"
+      style = "detail_hint"
+      action = ExecTerm("htop")
+    }
+  }
 }
 
 #CSS
 label#cpu-text {
-  padding-left: 4px;
-  padding-right: 4px;
-  color: @theme_fg_color;
+  padding: 2px 8px;
+  color: #cdd6f4;
 }

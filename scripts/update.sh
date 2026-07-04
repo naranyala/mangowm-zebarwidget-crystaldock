@@ -140,6 +140,14 @@ if $UPDATE_DOTFILES; then
   UPDATED=0
   for cfg in rc.xml autostart environment menu.xml themerc-override; do
     if [ -f "$DOTFILES_SRC/$cfg" ]; then
+      # Validate rc.xml source before updating
+      if [ "$cfg" = "rc.xml" ]; then
+        CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$DOTFILES_SRC/$cfg")
+        if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+          warn "rc.xml: source has broken Client context (Left Press) — skipping"
+          continue
+        fi
+      fi
       if [ -f "$DOTFILES_DST/$cfg" ]; then
         if ! cmp -s "$DOTFILES_SRC/$cfg" "$DOTFILES_DST/$cfg" 2>/dev/null; then
           cp "$DOTFILES_SRC/$cfg" "$DOTFILES_DST/$cfg"
@@ -168,6 +176,14 @@ if $UPDATE_CONFIG; then
     UPDATED=0
     for cfg in rc.xml autostart environment menu.xml themerc-override; do
       if [ -f "$CONFIG_SRC/$cfg" ] && [ -f "$CONFIG_DST/$cfg" ]; then
+        # Validate rc.xml source before updating
+        if [ "$cfg" = "rc.xml" ]; then
+          CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$CONFIG_SRC/$cfg")
+          if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+            warn "rc.xml: config source has broken Client context (Left Press) — skipping"
+            continue
+          fi
+        fi
         if ! cmp -s "$CONFIG_SRC/$cfg" "$CONFIG_DST/$cfg" 2>/dev/null; then
           cp "$CONFIG_SRC/$cfg" "$CONFIG_DST/$cfg"
           pass "Updated $cfg"

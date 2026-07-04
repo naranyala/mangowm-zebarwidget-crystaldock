@@ -5,28 +5,57 @@ module("network")
 Private {
   include("wifi.widget")
 
-  export label "network-text" {
+  export button "network-text" {
     interval = 5000
-    style = "network-text"
+    style = "module"
+    class = "module"
     value = If(Net("online"),
       If(Net("wifi"),
-        "WiFi " + Net("ssid"),
-        "Eth"
+        If(Net("signal") > 75, "network-wireless-signal-excellent-symbolic",
+         If(Net("signal") > 50, "network-wireless-signal-good-symbolic",
+          If(Net("signal") > 25, "network-wireless-signal-ok-symbolic",
+           "network-wireless-signal-weak-symbolic"))),
+        "network-wired-symbolic"
       ),
-      "Offline"
+      "network-wireless-offline-symbolic"
     )
     tooltip = If(Net("online"),
       "Interface: " + Net("iface") + "\n" +
       If(Net("wifi"), "SSID: " + Net("ssid") + "\nSignal: " + Str(Net("signal")) + "%", "Wired"),
       "Not connected"
     )
-    action = ExecTerm("nmcli device status")
+    action = PopUp("NetPopup")
+  }
+
+  PopUp("NetPopup") {
+    style = "detail_popup"
+    grid {
+      style = "detail_grid"
+      label {
+        value = "Network"
+        style = "detail_header"
+      }
+      label {
+        style = "detail_value"
+        interval = 5000
+        value = If(Net("online"),
+          If(Net("wifi"),
+            "WiFi " + Net("ssid") + "\n" +
+            "Signal: " + Str(Net("signal")) + "%\n" +
+            "Interface: " + Net("iface"),
+            "Ethernet\n" +
+            "Interface: " + Net("iface")
+          ),
+          "Offline"
+        )
+      }
+      label {
+        value = "Click to open nmtui"
+        style = "detail_hint"
+        action = ExecTerm("nmtui-connect")
+      }
+    }
   }
 }
 
 #CSS
-label#network-text {
-  padding-left: 4px;
-  padding-right: 4px;
-  color: @theme_fg_color;
-}

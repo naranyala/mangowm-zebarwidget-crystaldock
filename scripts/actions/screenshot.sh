@@ -2,8 +2,8 @@
 #
 # screenshot.sh — Screenshot with annotation
 #
-# Modes: full, area, window, timer
-# Tools: grim+slurp, flameshot, maim
+# Modes: full, area, window, timer, annotate
+# Tools: grim+slurp, flameshot, ksnip, swappy, satty
 
 set -euo pipefail
 
@@ -41,28 +41,52 @@ take_screenshot() {
         sleep "$DELAY"
         grim "$FILEPATH"
         ;;
+      annotate)
+        # Pipe area selection directly to annotation tool
+        if command -v satty &>/dev/null; then
+          grim -g "$(slurp)" - | satty - --save-file "$FILEPATH" --copy-to-clipboard
+          return
+        elif command -v swappy &>/dev/null; then
+          grim -g "$(slurp)" - | swappy -f - -o "$FILEPATH"
+          return
+        else
+          grim -g "$(slurp)" "$FILEPATH"
+        fi
+        ;;
+      annotate-full)
+        # Full desktop → annotation tool
+        if command -v satty &>/dev/null; then
+          grim - | satty - --save-file "$FILEPATH" --copy-to-clipboard
+          return
+        elif command -v swappy &>/dev/null; then
+          grim - | swappy -f - -o "$FILEPATH"
+          return
+        else
+          grim "$FILEPATH"
+        fi
+        ;;
     esac
   elif command -v flameshot &>/dev/null; then
     case "$MODE" in
       full) flameshot full -p "$SAVE_DIR" ;;
-      area|window) flameshot gui -p "$SAVE_DIR" ;;
+      area|window|annotate) flameshot gui -p "$SAVE_DIR" ;;
       timer) flameshot full -d "$((DELAY * 1000))" -p "$SAVE_DIR" ;;
     esac
-  elif command -v maim &>/dev/null; then
+  elif command -v ksnip &>/dev/null; then
     case "$MODE" in
-      full) maim "$FILEPATH" ;;
-      area) maim -s "$FILEPATH" ;;
-      window) maim -i "$(xdotool getactivewindow)" "$FILEPATH" ;;
-      timer) sleep "$DELAY" && maim "$FILEPATH" ;;
+      full) ksnip -f "$FILEPATH" ;;
+      area|annotate) ksnip -r ;;
+      window) ksnip -a ;;
+      timer) sleep "$DELAY" && ksnip -f "$FILEPATH" ;;
     esac
   else
-    fail "No screenshot tool found. Install grim+slurp, flameshot, or maim"
+    fail "No screenshot tool found. Install grim+slurp, flameshot, or ksnip"
   fi
 }
 
 take_screenshot
 
-# Copy to clipboard
+# Copy to clipboard (if file was created)
 if $CLIPBOARD && [ -f "$FILEPATH" ]; then
   if command -v wl-copy &>/dev/null; then
     wl-copy < "$FILEPATH"

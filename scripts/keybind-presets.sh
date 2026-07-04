@@ -60,6 +60,12 @@ case "$ACTION" in
       fail "Preset not found: $PRESET_NAME"
     fi
 
+    # Validate preset — reject if Client context has Left Press
+    CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$PRESET_FILE")
+    if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+      fail "Preset '$PRESET_NAME' has broken Client context (Left Press). Fix $PRESET_FILE first."
+    fi
+
     # Backup current
     if [ -f "$RC_XML" ]; then
       cp "$RC_XML" "${RC_XML}.preset-backup"

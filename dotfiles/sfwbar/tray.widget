@@ -1,0 +1,27 @@
+#Api2
+
+# System tray widget
+tray {
+  style = "module"
+  class = "module"
+}
+
+#CSS
+
+button#tray_item {
+  margin: 0px;
+  border: none;
+  padding: 2px;
+  background-color: transparent;
+}
+
+button#tray_item.passive {
+  -GtkWidget-visible: false;
+}
+
+button#tray_item image {
+  -GtkWidget-valign: center;
+  -GtkWidget-vexpand: true;
+  padding: 2px;
+  margin: 0px;
+}

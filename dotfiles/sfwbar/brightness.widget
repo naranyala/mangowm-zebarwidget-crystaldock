@@ -1,0 +1,26 @@
+#Api2
+
+# Brightness widget — display brightness control
+file("/bin/sh -c 'brightnessctl get 2>/dev/null || echo 0'") {
+  XBrightRaw = Grab(First)
+}
+
+file("/bin/sh -c 'brightnessctl max 2>/dev/null || echo 100'") {
+  XBrightMax = Grab(First)
+}
+
+Set XBrightLevel = If(Val(XBrightMax) > 0, Val(XBrightRaw) / Val(XBrightMax) * 100, 0)
+
+export button "brightness" {
+  interval = 5000
+  style = "module"
+  class = "module"
+  value = If(XBrightLevel > 75, "display-brightness-high-symbolic",
+           If(XBrightLevel > 25, "display-brightness-medium-symbolic",
+            "display-brightness-low-symbolic"))
+  tooltip = "Brightness: " + Str(XBrightLevel, 0) + "%"
+  action[scroll_up] = Exec("brightnessctl set +5%")
+  action[scroll_down] = Exec("brightnessctl set 5%-")
+}
+
+#CSS

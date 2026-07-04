@@ -9,7 +9,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_DIR="${HOME}/.config/labwc"
-ZEBAR_DIR="${HOME}/.config/zebar"
+SFWBAR_DIR="${HOME}/.config/sfwbar"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -34,7 +34,7 @@ echo ""
 # ============================================================
 section "1. Create Missing Directories"
 # ============================================================
-for dir in "$CONFIG_DIR" "$ZEBAR_DIR" "$ZEBAR_DIR/main" "$HOME/.local/bin" "$HOME/Pictures/wallpapers"; do
+for dir in "$CONFIG_DIR" "$SFWBAR_DIR" "$HOME/.local/bin" "$HOME/Pictures/wallpapers"; do
   if [ -d "$dir" ]; then
     skip "$dir already exists"
   else
@@ -66,7 +66,7 @@ while IFS= read -r -d '' link; do
     pass "Removed broken symlink: $link"
     ((BROKEN++))
   fi
-done < <(find "$CONFIG_DIR" "$ZEBAR_DIR" -type l -print0 2>/dev/null)
+done < <(find "$CONFIG_DIR" "$SFWBAR_DIR" -type l -print0 2>/dev/null)
 
 if [ "$BROKEN" -eq 0 ]; then
   skip "No broken symlinks found"
@@ -79,6 +79,14 @@ DOTFILES_DIR="$PROJECT_DIR/dotfiles/labwc"
 
 for cfg in rc.xml autostart environment menu.xml themerc-override; do
   if [ -f "$DOTFILES_DIR/$cfg" ] && [ ! -f "$CONFIG_DIR/$cfg" ]; then
+    # Validate rc.xml source before installing
+    if [ "$cfg" = "rc.xml" ]; then
+      CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$DOTFILES_DIR/$cfg")
+      if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+        warn "Source rc.xml has broken Client context — skipping install"
+        continue
+      fi
+    fi
     cp "$DOTFILES_DIR/$cfg" "$CONFIG_DIR/$cfg"
     pass "Installed missing $cfg"
   else

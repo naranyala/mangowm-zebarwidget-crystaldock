@@ -73,6 +73,15 @@ for cfg in "${CFG_FILES[@]}"; do
   src="$SRC_DIR/$cfg"
   dst="$DST_DIR/$cfg"
 
+  # Validate rc.xml source before push
+  if [ "$DIRECTION" = "push" ] && [ "$cfg" = "rc.xml" ] && [ -f "$src" ]; then
+    CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$src")
+    if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
+      warn "rc.xml: source has broken Client context (Left Press) — skipping"
+      continue
+    fi
+  fi
+
   case "$DIRECTION" in
     diff)
       if [ ! -f "$src" ] && [ ! -f "$dst" ]; then

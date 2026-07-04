@@ -2,17 +2,48 @@
 
 include("battery.source")
 
-export label "battery-text" {
+export button "battery-text" {
   interval = 10000
-  style = battery-text
-  value = "Bat " + Str(Level, 0) + "%"
+  style = "module"
+  class = "module"
+  value = If(Level > 90, "battery-full-symbolic",
+           If(Level > 60, "battery-good-symbolic",
+            If(Level > 20, "battery-low-symbolic",
+             "battery-empty-symbolic")))
   tooltip = "Battery: " + Str(Level, 0) + "%\nStatus: " + If(Discharging, "Discharging", "Charging")
-  action = ExecTerm("upower -i /org/freedesktop/UPower/devices/battery_BAT0")
+  action = PopUp("BatPopup")
+}
+
+PopUp("BatPopup") {
+  style = "detail_popup"
+  grid {
+    style = "detail_grid"
+    label {
+      value = "Battery"
+      style = "detail_header"
+    }
+    label {
+      style = "detail_value"
+      interval = 10000
+      value = "Battery " + Str(Level, 0) + "%\n" +
+        "Status: " + If(Discharging, "Discharging", "Charging") + "\n" +
+        "Time: " + If(Discharging,
+          If(Time > 60, Str(Time/60, 0) + "h " + Str(Time%60, 0) + "m left", Str(Time, 0) + " min left"),
+          If(Time > 60, Str(Time/60, 0) + "h " + Str(Time%60, 0) + "m to full", Str(Time, 0) + " min to full")
+        )
+    }
+    progressbar {
+      style = "detail_progress"
+      value = Level
+      min = 0
+      max = 100
+    }
+    label {
+      value = "Click to open upower"
+      style = "detail_hint"
+      action = ExecTerm("upower -i /org/freedesktop/UPower/devices/battery_BAT0")
+    }
+  }
 }
 
 #CSS
-label#battery-text {
-  padding-left: 4px;
-  padding-right: 4px;
-  color: @theme_fg_color;
-}

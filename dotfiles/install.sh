@@ -1,19 +1,30 @@
 #!/bin/bash
-
-# labwc + sfwbar + crystal-dock Dotfiles Installation Script
-# Complete installation with all scripts and configurations
+#
+# install.sh — Fresh system installer for labwc dotfiles
+#
+# Usage:
+#   ./install.sh              Interactive install (with backup)
+#   ./install.sh --help       Show help
+#   ./install.sh --check      Validate only (no changes)
+#   ./install.sh --no-backup  Skip backup
+#   ./install.sh --force      Overwrite without prompts
+#
 
 set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-GTK3_DIR="${HOME}/.config/gtk-3.0"
-GTK4_DIR="${HOME}/.config/gtk-4.0"
+
+# ============================================================
+# Colors & helpers
+# ============================================================
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
 pass()  { echo -e "  ${GREEN}✓${NC} $1"; }
@@ -22,65 +33,218 @@ warn()  { echo -e "  ${YELLOW}⚠${NC} $1"; }
 info()  { echo -e "  ${CYAN}→${NC} $1"; }
 section() { echo -e "\n${BOLD}[$1]${NC}"; }
 
-echo ""
-echo -e "${BOLD}== labwc Dotfiles Installer ==${NC}"
-echo ""
-
 # ============================================================
-section "1. Pre-flight Checks"
+# Parse arguments
 # ============================================================
 
-# Check labwc
-LABWC_BIN="$(command -v labwc 2>/dev/null || true)"
-if [[ -z "$LABWC_BIN" ]]; then
-  fail "labwc not found. Run: ./download-labwc.sh --install"
+MODE="install"
+SKIP_BACKUP=0
+FORCE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --help|-h)
+      echo -e "${BOLD}labwc Dotfiles Installer${NC}"
+      echo ""
+      echo "Usage: ./install.sh [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --help        Show this help"
+      echo "  --check       Validate only (no changes)"
+      echo "  --no-backup   Skip backup of existing configs"
+      echo "  --force       Overwrite without prompts"
+      echo ""
+      echo "This installer sets up:"
+      echo "  • labwc compositor config"
+      echo "  • sfwbar statusbar + widgets"
+      echo "  • GTK3/GTK4 theme"
+      echo "  • Fuzzel app launcher"
+      echo "  • Fontconfig + fonts"
+      echo "  • Theme engine (11 themes)"
+      echo "  • Screenshot tools"
+      echo "  • All scripts to ~/.local/bin/"
+      exit 0
+      ;;
+    --check)
+      MODE="check"
+      ;;
+    --no-backup)
+      SKIP_BACKUP=1
+      ;;
+    --force)
+      FORCE=1
+      ;;
+    *)
+      echo -e "${RED}Unknown option: $arg${NC}"
+      echo "Run './install.sh --help' for usage"
+      exit 1
+      ;;
+  esac
+done
+
+# ============================================================
+# Directories
+# ============================================================
+
+LABWC_DST="$HOME/.config/labwc"
+SFWBAR_DST="$HOME/.config/sfwbar"
+GTK3_DIR="$HOME/.config/gtk-3.0"
+GTK4_DIR="$HOME/.config/gtk-4.0"
+FUZZEL_DST="$HOME/.config/fuzzel"
+FONTCONFIG_DST="$HOME/.config/fontconfig"
+SCRIPTS_DST="$HOME/.local/bin"
+BACKUP_DIR="$HOME/.config/labwc-backups/$(date +%Y%m%d-%H%M%S)"
+
+# ============================================================
+# Banner
+# ============================================================
+
+echo ""
+echo -e "${BOLD}═══════════════════════════════════════════════${NC}"
+echo -e "${BOLD}  labwc Dotfiles Installer${NC}"
+echo -e "${BOLD}═══════════════════════════════════════════════${NC}"
+echo ""
+if [[ "$MODE" == "check" ]]; then
+  echo -e "  Mode: ${CYAN}validate only${NC} (no changes)"
+elif [[ "$SKIP_BACKUP" -eq 1 ]]; then
+  echo -e "  Mode: ${YELLOW}install (no backup)${NC}"
+else
+  echo -e "  Mode: ${GREEN}install (with backup)${NC}"
 fi
-pass "labwc: $LABWC_BIN"
+echo ""
 
-# Check sfwbar
+# ============================================================
+# Pre-flight checks
+# ============================================================
+
+section "1. Pre-flight Checks"
+
+ERRORS=0
+
+# labwc
+LABWC_BIN="$(command -v labwc 2>/dev/null || true)"
+if [[ -n "$LABWC_BIN" ]]; then
+  pass "labwc: $LABWC_BIN"
+else
+  warn "labwc not found"
+  echo -e "    ${DIM}Install: sudo apt install labwc${NC}"
+  echo -e "    ${DIM}Or build: ./download-labwc.sh --install${NC}"
+  ((ERRORS++))
+fi
+
+# sfwbar
 if command -v sfwbar &>/dev/null; then
   pass "sfwbar: $(command -v sfwbar)"
 else
   warn "sfwbar not found (statusbar will need manual launch)"
 fi
 
-# Check crystal-dock
-if command -v crystal-dock &>/dev/null; then
-  pass "crystal-dock: $(command -v crystal-dock)"
-else
-  warn "crystal-dock not found (dock will be skipped)"
+# Required tools
+for tool in grim slurp wl-copy; do
+  if command -v "$tool" &>/dev/null; then
+    pass "$tool: $(command -v $tool)"
+  else
+    warn "$tool not found (screenshot/clipboard may not work)"
+  fi
+done
+
+# Bash version check
+if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  fail "Bash 4+ required (current: ${BASH_VERSION})"
+fi
+
+if [[ "$MODE" == "check" ]]; then
+  echo ""
+  if [[ $ERRORS -eq 0 ]]; then
+    echo -e "${GREEN}${BOLD}All checks passed!${NC}"
+  else
+    echo -e "${YELLOW}${BOLD}$ERRORS issue(s) found${NC}"
+  fi
+  exit "$ERRORS"
 fi
 
 # ============================================================
-section "2. Create Directories"
+# Backup existing configs
 # ============================================================
 
+if [[ "$SKIP_BACKUP" -eq 0 ]]; then
+  section "2. Backup Existing Configs"
+
+  BACKUP_ITEMS=(
+    "$LABWC_DST"
+    "$SFWBAR_DST"
+    "$GTK3_DIR"
+    "$GTK4_DIR"
+    "$FUZZEL_DST"
+    "$FONTCONFIG_DST"
+  )
+
+  HAS_BACKUP=0
+  for item in "${BACKUP_ITEMS[@]}"; do
+    if [[ -d "$item" ]]; then
+      HAS_BACKUP=1
+      break
+    fi
+  done
+
+  if [[ $HAS_BACKUP -eq 1 ]]; then
+    mkdir -p "$BACKUP_DIR"
+    for item in "${BACKUP_ITEMS[@]}"; do
+      if [[ -d "$item" ]]; then
+        name=$(basename "$item")
+        cp -r "$item" "$BACKUP_DIR/" 2>/dev/null && \
+          pass "backed up $name" || true
+      fi
+    done
+    echo -e "  ${DIM}Backup location: $BACKUP_DIR${NC}"
+  else
+    pass "No existing configs to backup"
+  fi
+else
+  section "2. Backup (skipped)"
+  info "Backup skipped (--no-backup)"
+fi
+
+# ============================================================
+# Create directories
+# ============================================================
+
+section "3. Create Directories"
+
 DIRS=(
-  "$HOME/.config/labwc"
+  "$LABWC_DST"
   "$HOME/.config/labwc-widgets"
-  "$HOME/.config/sfwbar"
-  "$HOME/.local/bin"
+  "$SFWBAR_DST"
+  "$GTK3_DIR"
+  "$GTK4_DIR"
+  "$FUZZEL_DST"
+  "$FONTCONFIG_DST"
+  "$SCRIPTS_DST"
+  "$SCRIPTS_DST/actions"
   "$HOME/Pictures/screenshots"
+  "$HOME/.local/share/fonts"
 )
 
 for dir in "${DIRS[@]}"; do
   mkdir -p "$dir"
-  pass "$dir"
+  pass "$(echo "$dir" | sed "s|$HOME|~|")"
 done
 
 # ============================================================
-section "3. Install labwc Config"
+# Install labwc config
 # ============================================================
 
-LABWC_SRC="$PROJECT_DIR/dotfiles/labwc"
-LABWC_DST="$HOME/.config/labwc"
+section "4. Labwc Config"
 
-# Pre-validate rc.xml — abort if source has broken Client context
+LABWC_SRC="$PROJECT_DIR/dotfiles/labwc"
+
+# Validate rc.xml
 if [[ -f "$LABWC_SRC/rc.xml" ]]; then
   CLIENT_CTX=$(sed -n '/<context name="Client">/,/<\/context>/p' "$LABWC_SRC/rc.xml")
   if echo "$CLIENT_CTX" | grep -q 'button="Left" action="Press"'; then
-    fail "SOURCE rc.xml has broken Client context (Left Press). Fix dotfiles/labwc/rc.xml first."
+    fail "SOURCE rc.xml has broken Client context (Left Press)"
   fi
+  pass "rc.xml validation passed"
 fi
 
 for cfg in rc.xml autostart environment menu.xml themerc-override startup-wallpaper.sh; do
@@ -93,99 +257,107 @@ done
 chmod +x "$LABWC_DST/autostart" 2>/dev/null || true
 chmod +x "$LABWC_DST/startup-wallpaper.sh" 2>/dev/null || true
 
+# Presets
+if [[ -d "$LABWC_SRC/presets" ]]; then
+  mkdir -p "$LABWC_DST/presets"
+  cp "$LABWC_SRC/presets/"* "$LABWC_DST/presets/" 2>/dev/null && \
+    pass "presets/" || true
+fi
+
 # ============================================================
-section "4. Install Scripts"
+# Install sfwbar config
 # ============================================================
 
-SCRIPTS_DST="$HOME/.local/bin"
-mkdir -p "$SCRIPTS_DST/actions"
+section "5. SFWBar Config"
 
-# Install scripts from dotfiles/ (including subdirectories)
-find "$SCRIPT_DIR" -name "*.sh" -type f | while read -r script; do
-  name=$(basename "$script")
-  [[ "$name" == "install.sh" ]] || continue
-  cp "$script" "$SCRIPTS_DST/$name"
-  chmod +x "$SCRIPTS_DST/$name"
-  pass "$name"
-done
+SFWBAR_SRC="$PROJECT_DIR/dotfiles/sfwbar"
 
-# Install main tool scripts from scripts/
-SCRIPTS_SRC="$PROJECT_DIR/scripts"
-find "$SCRIPTS_SRC" -name "*.sh" -type f | while read -r script; do
-  if [[ -f "$script" ]]; then
-    name=$(basename "$script")
-    cp "$script" "$SCRIPTS_DST/$name"
-    chmod +x "$SCRIPTS_DST/$name"
-    pass "$name"
-  fi
-done
-
-# Install action scripts
-if [[ -d "$SCRIPTS_SRC/actions" ]]; then
-  for script in "$SCRIPTS_SRC/actions"/*.sh; do
-    if [[ -f "$script" ]]; then
-      name=$(basename "$script")
-      cp "$script" "$SCRIPTS_DST/actions/$name"
-      chmod +x "$SCRIPTS_DST/actions/$name"
-      pass "actions/$name"
+if [[ -d "$SFWBAR_SRC" ]]; then
+  # Copy all config, css, widget, and source files
+  for f in "$SFWBAR_SRC"/*.config "$SFWBAR_SRC"/*.css "$SFWBAR_SRC"/*.widget "$SFWBAR_SRC"/*.source; do
+    if [[ -f "$f" ]]; then
+      cp "$f" "$SFWBAR_DST/"
+      pass "$(basename "$f")"
     fi
   done
 fi
 
-# ============================================================
-section "5. Install SFWBar Configuration"
-# ============================================================
-
-SFWBAR_SRC="$PROJECT_DIR/dotfiles/sfwbar"
-SFWBAR_DST="$HOME/.config/sfwbar"
-
-# Install sfwbar config and widget files
-mkdir -p "$SFWBAR_DST"
-if [[ -d "$SFWBAR_SRC" ]]; then
-  for cfg in sfwbar.config catppuccin-mocha.css *.widget *.source; do
-    for f in "$SFWBAR_SRC/$cfg"; do
-      if [[ -f "$f" ]]; then
-        cp "$f" "$SFWBAR_DST/"
-        pass "$(basename "$f")"
-      fi
-    done
-  done
-fi
-
-# Copy widget files from installed sfwbar if not already present
+# Copy default system sfwbar widgets if not already present
 if [[ -d "$HOME/.local/share/sfwbar" ]]; then
   for f in "$HOME/.local/share/sfwbar"/*.widget "$HOME/.local/share/sfwbar"/*.source; do
     if [[ -f "$f" ]]; then
       name=$(basename "$f")
       if [[ ! -f "$SFWBAR_DST/$name" ]]; then
         cp "$f" "$SFWBAR_DST/$name"
-        pass "$name"
+        pass "$name (system default)"
       fi
     fi
   done
 fi
 
 # ============================================================
-section "6. Install GTK Theme Config"
+# Install noctalia config
 # ============================================================
+
+section "6. Noctalia Config"
+
+NOCTALIA_SRC="$PROJECT_DIR/dotfiles/noctalia"
+NOCTALIA_DST="$HOME/.config/noctalia"
+
+if [[ -d "$NOCTALIA_SRC" ]]; then
+  mkdir -p "$NOCTALIA_DST"
+  for f in "$NOCTALIA_SRC"/*; do
+    if [[ -f "$f" ]]; then
+      cp "$f" "$NOCTALIA_DST/"
+      pass "noctalia/$(basename "$f")"
+    fi
+  done
+else
+  info "No noctalia config found (skipped)"
+fi
+
+# ============================================================
+# Install crystal-dock config
+# ============================================================
+
+section "7. Crystal Dock Config"
+
+CRYSTAL_SRC="$PROJECT_DIR/dotfiles/crystal-dock"
+CRYSTAL_DST="$HOME/.config/crystal-dock"
+
+if [[ -d "$CRYSTAL_SRC/labwc" ]]; then
+  mkdir -p "$CRYSTAL_DST"
+  for cfg in panel_1.conf appearance.conf; do
+    if [[ -f "$CRYSTAL_SRC/labwc/$cfg" ]]; then
+      cp "$CRYSTAL_SRC/labwc/$cfg" "$CRYSTAL_DST/$cfg"
+      pass "crystal-dock/$cfg"
+    fi
+  done
+else
+  info "No crystal-dock config found (skipped)"
+fi
+
+# ============================================================
+# Install GTK theme
+# ============================================================
+
+section "8. GTK Theme"
 
 GTK_SRC="$PROJECT_DIR/dotfiles/gtk"
 
-mkdir -p "$GTK3_DIR" "$GTK4_DIR"
+for f in gtk3-settings.ini gtk4-settings.ini; do
+  src="$GTK_SRC/$f"
+  if [[ -f "$src" ]]; then
+    if [[ "$f" == "gtk3-settings.ini" ]]; then
+      cp "$src" "$GTK3_DIR/settings.ini"
+      pass "GTK3 settings.ini"
+    else
+      cp "$src" "$GTK4_DIR/settings.ini"
+      pass "GTK4 settings.ini"
+    fi
+  fi
+done
 
-# GTK3 settings
-if [[ -f "$GTK_SRC/gtk3-settings.ini" ]]; then
-  cp "$GTK_SRC/gtk3-settings.ini" "$GTK3_DIR/settings.ini"
-  pass "GTK3 settings.ini"
-fi
-
-# GTK4 settings
-if [[ -f "$GTK_SRC/gtk4-settings.ini" ]]; then
-  cp "$GTK_SRC/gtk4-settings.ini" "$GTK4_DIR/settings.ini"
-  pass "GTK4 settings.ini"
-fi
-
-# GTK CSS overrides
 if [[ -f "$GTK_SRC/gtk.css" ]]; then
   cp "$GTK_SRC/gtk.css" "$GTK3_DIR/gtk.css"
   cp "$GTK_SRC/gtk.css" "$GTK4_DIR/gtk.css"
@@ -193,51 +365,98 @@ if [[ -f "$GTK_SRC/gtk.css" ]]; then
 fi
 
 # ============================================================
-section "7. Install Wallpaper"
+# Install fuzzel config
 # ============================================================
 
-WALLPAPER_SRC="$PROJECT_DIR/dotfiles/wallpaper"
-WALLPAPER_DST="$HOME/.local/bin/wallpaper"
+section "9. Fuzzel Launcher"
 
-if [[ -f "$WALLPAPER_SRC" ]]; then
-  cp "$WALLPAPER_SRC" "$WALLPAPER_DST"
-  chmod +x "$WALLPAPER_DST"
-  pass "wallpaper script"
-fi
+FUZZEL_SRC="$PROJECT_DIR/dotfiles/fuzzel"
 
-cp "$PROJECT_DIR/dotfiles/wallpaper-sources.txt" "$HOME/.local/bin/wallpaper-sources.txt" 2>/dev/null || true
-
-# ============================================================
-section "8. Create Session File"
-# ============================================================
-
-SESSION_DIR="/usr/share/wayland-sessions"
-SESSION_FILE="$SESSION_DIR/labwc.desktop"
-
-if [[ -d "$SESSION_DIR" ]]; then
-  cat > /tmp/labwc.desktop << EOF
-[Desktop Entry]
-Name=labwc
-Comment=Lab Wayland Compositor
-Exec=labwc
-TryExec=labwc
-Type=Application
-DesktopNames=labwc;
-Keywords=wayland;compositor;labwc;
-X-GDM-SessionRegisters=true
-X-GDM-CanRunHeadless=true
-EOF
-  sudo cp /tmp/labwc.desktop "$SESSION_FILE" 2>/dev/null && \
-    sudo chmod 644 "$SESSION_FILE" && \
-    pass "labwc.desktop" || warn "Could not create session file (need sudo)"
-  rm -f /tmp/labwc.desktop
+if [[ -d "$FUZZEL_SRC" ]]; then
+  for f in "$FUZZEL_SRC"/*; do
+    if [[ -f "$f" ]]; then
+      cp "$f" "$FUZZEL_DST/"
+      pass "fuzzel/$(basename "$f")"
+    fi
+  done
 else
-  warn "Session directory not found"
+  info "No fuzzel config found (skipped)"
 fi
 
 # ============================================================
-section "9. Update PATH"
+# Install fontconfig + fonts
 # ============================================================
+
+section "10. Fontconfig & Fonts"
+
+FONTCONFIG_SRC="$PROJECT_DIR/dotfiles/fontconfig"
+
+if [[ -d "$FONTCONFIG_SRC" ]]; then
+  for f in "$FONTCONFIG_SRC"/*; do
+    if [[ -f "$f" ]]; then
+      cp "$f" "$FONTCONFIG_DST/"
+      pass "fontconfig/$(basename "$f")"
+    fi
+  done
+fi
+
+# Install fonts
+FONTS_SCRIPT="$PROJECT_DIR/scripts/install-fonts.sh"
+if [[ -x "$FONTS_SCRIPT" ]]; then
+  info "Installing fonts..."
+  bash "$FONTS_SCRIPT" 2>&1 | sed 's/^/    /' || warn "Font installation had issues"
+else
+  warn "install-fonts.sh not found"
+fi
+
+# ============================================================
+# Install scripts
+# ============================================================
+
+section "11. Scripts"
+
+# Install main scripts
+SCRIPTS_SRC="$PROJECT_DIR/scripts"
+for f in "$SCRIPTS_SRC"/*.sh; do
+  if [[ -f "$f" ]]; then
+    name=$(basename "$f")
+    cp "$f" "$SCRIPTS_DST/$name"
+    chmod +x "$SCRIPTS_DST/$name"
+    pass "$name"
+  fi
+done
+
+# Install action scripts
+if [[ -d "$SCRIPTS_SRC/actions" ]]; then
+  for f in "$SCRIPTS_SRC/actions"/*.sh; do
+    if [[ -f "$f" ]]; then
+      name=$(basename "$f")
+      cp "$f" "$SCRIPTS_DST/actions/$name"
+      chmod +x "$SCRIPTS_DST/actions/$name"
+      pass "actions/$name"
+    fi
+  done
+fi
+
+# Install wallpaper script
+WALLPAPER_SRC="$PROJECT_DIR/dotfiles/wallpaper"
+if [[ -f "$WALLPAPER_SRC" ]]; then
+  cp "$WALLPAPER_SRC" "$SCRIPTS_DST/wallpaper"
+  chmod +x "$SCRIPTS_DST/wallpaper"
+  pass "wallpaper"
+fi
+
+# Install wallpaper sources
+if [[ -f "$PROJECT_DIR/dotfiles/wallpaper-sources.txt" ]]; then
+  cp "$PROJECT_DIR/dotfiles/wallpaper-sources.txt" "$SCRIPTS_DST/wallpaper-sources.txt"
+  pass "wallpaper-sources.txt"
+fi
+
+# ============================================================
+# Update PATH
+# ============================================================
+
+section "12. PATH"
 
 PROFILE=""
 for f in "$HOME/.bashrc" "$HOME/.profile" "$HOME/.zshrc"; do
@@ -252,103 +471,141 @@ if [[ -n "$PROFILE" ]]; then
     echo '' >> "$PROFILE"
     echo '# labwc - add local bin to PATH' >> "$PROFILE"
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$PROFILE"
-    pass "PATH updated in $PROFILE"
+    pass "PATH updated in $(basename "$PROFILE")"
   else
     pass "PATH already configured"
   fi
 fi
 
 # ============================================================
-section "10. Validate"
+# Create session file
 # ============================================================
+
+section "13. Session File"
+
+SESSION_DIR="/usr/share/wayland-sessions"
+if [[ -d "$SESSION_DIR" ]]; then
+  cat > /tmp/labwc.desktop << 'EOF'
+[Desktop Entry]
+Name=labwc
+Comment=Lab Wayland Compositor
+Exec=labwc
+TryExec=labwc
+Type=Application
+DesktopNames=labwc;
+Keywords=wayland;compositor;labwc;
+X-GDM-SessionRegisters=true
+X-GDM-CanRunHeadless=true
+EOF
+  sudo cp /tmp/labwc.desktop "$SESSION_DIR/labwc.desktop" 2>/dev/null && \
+    sudo chmod 644 "$SESSION_DIR/labwc.desktop" && \
+    pass "labwc.desktop" || warn "Could not create session file (need sudo)"
+  rm -f /tmp/labwc.desktop
+else
+  info "Session directory not found (skipped)"
+fi
+
+# ============================================================
+# Apply default theme
+# ============================================================
+
+section "14. Apply Theme"
+
+THEME_SCRIPT="$SCRIPTS_DST/theme"
+if [[ -x "$THEME_SCRIPT" ]]; then
+  info "Applying catppuccin-mocha theme..."
+  bash "$THEME_SCRIPT" catppuccin-mocha 2>&1 | sed 's/^/    /' || warn "Theme application had issues"
+else
+  warn "theme script not found — run manually: theme catppuccin-mocha"
+fi
+
+# ============================================================
+# Validation
+# ============================================================
+
+section "15. Validation"
 
 ERRORS=0
 
-# Check autostart
-if [[ -f "$LABWC_DST/autostart" ]]; then
-  grep -q "crystal-dock" "$LABWC_DST/autostart" && pass "autostart: crystal-dock" || warn "autostart: missing crystal-dock"
-  grep -q "sfwbar" "$LABWC_DST/autostart" && pass "autostart: sfwbar" || warn "autostart: missing sfwbar"
-  grep -q "gammastep\|redshift" "$LABWC_DST/autostart" && pass "autostart: screen protection" || warn "autostart: no screen protection"
-fi
+# Check critical files
+CHECKS=(
+  "$LABWC_DST/rc.xml:labwc rc.xml"
+  "$LABWC_DST/autostart:labwc autostart"
+  "$LABWC_DST/environment:labwc environment"
+  "$SFWBAR_DST/sfwbar.config:sfwbar config"
+  "$GTK3_DIR/settings.ini:GTK3 settings"
+  "$GTK4_DIR/settings.ini:GTK4 settings"
+  "$GTK3_DIR/gtk.css:GTK3 CSS"
+  "$FUZZEL_DST/fuzzel.ini:fuzzel config"
+  "$FONTCONFIG_DST/fonts.conf:fontconfig"
+)
+
+for check in "${CHECKS[@]}"; do
+  file="${check%%:*}"
+  label="${check##*:}"
+  if [[ -f "$file" ]]; then
+    pass "$label"
+  else
+    warn "$label: missing"
+    ((ERRORS++))
+  fi
+done
 
 # Check scripts
-for script in validate.sh fix.sh clean.sh dotfiles-sync.sh keybind-presets.sh themes.sh widget-actions.sh quick.sh setup.sh update.sh status.sh backup.sh diagnostics.sh start-labwc.sh widget-manager.sh keybinds.sh relaunch-status-bars.sh reset.sh; do
+for script in theme.sh validate.sh fix.sh start-labwc.sh font-scale.sh; do
   if [[ -f "$SCRIPTS_DST/$script" ]]; then
     pass "script: $script"
   else
-    warn "missing script: $script"
+    warn "missing: $script"
     ((ERRORS++))
   fi
 done
 
-# Check actions
-for script in audio.sh brightness.sh clipboard.sh launcher.sh network.sh power-menu.sh quick-settings.sh screenshot.sh window.sh workspace.sh; do
-  if [[ -f "$SCRIPTS_DST/actions/$script" ]]; then
-    pass "actions/$script"
-  else
-    warn "missing action: $script"
-    ((ERRORS++))
-  fi
-done
-
-# Check sfwbar config
-if [[ -f "$HOME/.config/sfwbar/sfwbar.config" ]]; then
-  pass "sfwbar config: installed"
+# Check fonts
+if fc-list 2>/dev/null | grep -qi "noto sans"; then
+  pass "fonts: Noto Sans"
 else
-  warn "sfwbar config: missing"
-  ((ERRORS++))
-fi
-
-# Check GTK config
-if [[ -f "$GTK3_DIR/settings.ini" ]]; then
-  pass "GTK3 settings: installed"
-else
-  warn "GTK3 settings: missing"
-  ((ERRORS++))
-fi
-if [[ -f "$GTK4_DIR/settings.ini" ]]; then
-  pass "GTK4 settings: installed"
-else
-  warn "GTK4 settings: missing"
-  ((ERRORS++))
-fi
-if [[ -f "$GTK3_DIR/gtk.css" ]]; then
-  pass "GTK3 CSS: installed"
-else
-  warn "GTK3 CSS: missing"
-  ((ERRORS++))
-fi
-if [[ -f "$GTK4_DIR/gtk.css" ]]; then
-  pass "GTK4 CSS: installed"
-else
-  warn "GTK4 CSS: missing"
-  ((ERRORS++))
+  warn "fonts: Noto Sans not found"
 fi
 
 # ============================================================
-section "11. Summary"
+# Summary
 # ============================================================
 
+section "Done"
+
 echo ""
-echo -e "${GREEN}${BOLD}Installation Complete!${NC}"
+if [[ $ERRORS -eq 0 ]]; then
+  echo -e "${GREEN}${BOLD}Installation complete!${NC}"
+else
+  echo -e "${YELLOW}${BOLD}Installation complete with $ERRORS warning(s)${NC}"
+fi
+
 echo ""
-echo "Components installed:"
-echo "  • labwc config    → ~/.config/labwc/"
-echo "  • SFWBar config   → ~/.config/sfwbar/"
-echo "  • GTK3 config     → ~/.config/gtk-3.0/"
-echo "  • GTK4 config     → ~/.config/gtk-4.0/"
-echo "  • Scripts         → ~/.local/bin/"
-echo "  • Actions         → ~/.local/bin/actions/"
-echo "  • Wallpaper       → ~/.local/bin/wallpaper"
+echo -e "${BOLD}Installed:${NC}"
+echo "  labwc config     → ~/.config/labwc/"
+echo "  sfwbar config    → ~/.config/sfwbar/"
+echo "  GTK3/GTK4        → ~/.config/gtk-{3,4}.0/"
+echo "  fuzzel           → ~/.config/fuzzel/"
+echo "  fontconfig       → ~/.config/fontconfig/"
+echo "  scripts          → ~/.local/bin/"
+echo "  actions          → ~/.local/bin/actions/"
 echo ""
-echo "Available commands:"
-echo "  relaunch-status-bars.sh    Restart sfwbar + crystal-dock"
-echo "  reset.sh                   Full reset with defaults (non-interactive)"
-echo "  quick.sh                   Hub for all operations"
-echo "  setup.sh                   Full install chain"
-echo "  validate.sh                Check setup"
-echo "  fix.sh                     Auto-fix issues"
+
+if [[ -n "${BACKUP_DIR:-}" && -d "$BACKUP_DIR" ]]; then
+  echo -e "${BOLD}Backup:${NC} $BACKUP_DIR"
+  echo ""
+fi
+
+echo -e "${BOLD}Quick start:${NC}"
+echo "  theme                   # List themes"
+echo "  theme nord              # Switch theme"
+echo "  theme next              # Cycle themes"
+echo "  relaunch-status-bars    # Restart bar + dock"
+echo "  validate                # Check setup"
+echo "  fix                     # Auto-fix issues"
 echo ""
-echo "Launch from TTY:"
-echo "  $PROJECT_DIR/scripts/start-labwc.sh"
+echo -e "${BOLD}Launch labwc:${NC}"
+echo "  From TTY:  start-labwc"
+echo "  From DM:   Select 'labwc' session"
 echo ""

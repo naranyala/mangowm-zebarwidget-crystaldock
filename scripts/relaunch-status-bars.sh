@@ -7,6 +7,8 @@
 #   "sfwbar"         → restart sfwbar only
 #   "dock"           → restart crystal-dock only
 
+export PATH="$HOME/.local/bin:$PATH"
+
 set -euo pipefail
 
 RED='\033[0;31m'
@@ -27,13 +29,16 @@ TARGET="${1:-all}"
 # ---- Stop ----
 section "Stopping"
 
-stop_sfwbar() {
+stop_statusbar() {
   if pgrep -x sfwbar >/dev/null 2>&1; then
     pkill -9 -x sfwbar
     sleep 0.3
     pass "sfwbar stopped"
-  else
-    info "sfwbar not running"
+  fi
+  if pgrep -x noctalia >/dev/null 2>&1; then
+    pkill -9 -x noctalia
+    sleep 0.3
+    pass "noctalia stopped"
   fi
 }
 
@@ -48,33 +53,57 @@ stop_dock() {
 }
 
 case "$TARGET" in
-  sfwbar) stop_sfwbar ;;
+  sfwbar|statusbar) stop_statusbar ;;
   dock)   stop_dock ;;
-  all)    stop_sfwbar; stop_dock ;;
-  *)      fail "Unknown target: $TARGET (use sfwbar, dock, or all)" ;;
+  all)    stop_statusbar; stop_dock ;;
+  *)      fail "Unknown target: $TARGET (use statusbar, dock, or all)" ;;
 esac
 
 # ---- Start ----
 section "Starting"
 
-CSS_FILE="$HOME/.config/sfwbar/catppuccin-mocha.css"
+CSS_FILE="$HOME/.config/sfwbar/theme.css"
 CONFIG_FILE="$HOME/.config/sfwbar/sfwbar.config"
 CSS_ARG=""
 CONFIG_ARG=""
 [ -f "$CSS_FILE" ] && CSS_ARG="-c $CSS_FILE"
 [ -f "$CONFIG_FILE" ] && CONFIG_ARG="-f $CONFIG_FILE"
 
-start_sfwbar() {
-  if ! command -v sfwbar >/dev/null 2>&1; then
-    warn "sfwbar binary not found, skipping"
-    return
+start_statusbar() {
+  STATUSBAR="sfwbar"
+  if [ -f "$HOME/.config/labwc-widgets/status.json" ]; then
+    VAL=$(grep -o '"statusbar"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.config/labwc-widgets/status.json" 2>/dev/null | head -1 | sed 's/.*": *"//;s/"$//')
+    [ -n "$VAL" ] && STATUSBAR="$VAL"
   fi
-  nohup sfwbar $CONFIG_ARG $CSS_ARG > /dev/null 2>&1 &
-  sleep 1
-  if pgrep -x sfwbar >/dev/null 2>&1; then
-    pass "sfwbar started (PID: $(pgrep -x sfwbar))"
-  else
-    warn "sfwbar failed to start"
+
+  if [ "$STATUSBAR" = "noctalia" ]; then
+    if ! command -v noctalia >/dev/null 2>&1; then
+      warn "noctalia binary not found, falling back to sfwbar"
+      STATUSBAR="sfwbar"
+    else
+      nohup noctalia > /dev/null 2>&1 &
+      sleep 1
+      if pgrep -x noctalia >/dev/null 2>&1; then
+        pass "noctalia started (PID: $(pgrep -x noctalia))"
+      else
+        warn "noctalia failed to start, falling back to sfwbar"
+        STATUSBAR="sfwbar"
+      fi
+    fi
+  fi
+
+  if [ "$STATUSBAR" = "sfwbar" ]; then
+    if ! command -v sfwbar >/dev/null 2>&1; then
+      warn "sfwbar binary not found, skipping"
+      return
+    fi
+    nohup sfwbar $CONFIG_ARG $CSS_ARG > /dev/null 2>&1 &
+    sleep 1
+    if pgrep -x sfwbar >/dev/null 2>&1; then
+      pass "sfwbar started (PID: $(pgrep -x sfwbar))"
+    else
+      warn "sfwbar failed to start"
+    fi
   fi
 }
 
@@ -83,8 +112,11 @@ start_dock() {
     warn "crystal-dock binary not found, skipping"
     return
   fi
-  nohup crystal-dock --start --overlay > /dev/null 2>&1 &
-  sleep 1
+  # Clean up stale Qt shared memory locks from crashes or SIGKILL
+  rm -f /tmp/qipc_sharedmemory_crystaldock* /tmp/qipc_systemsem_crystaldock* 2>/dev/null || true
+  
+  nohup crystal-dock > /dev/null 2>&1 &
+  sleep 2
   if pgrep -x crystal-dock >/dev/null 2>&1; then
     pass "crystal-dock started (PID: $(pgrep -x crystal-dock))"
   else
@@ -93,11 +125,13 @@ start_dock() {
 }
 
 case "$TARGET" in
-  sfwbar) start_sfwbar ;;
+  sfwbar|statusbar) start_statusbar ;;
   dock)   start_dock ;;
-  all)    start_sfwbar; start_dock ;;
+  all)    start_statusbar; start_dock ;;
 esac
 
 section "Status"
-pgrep -x sfwbar >/dev/null 2>&1 && pass "sfwbar: running" || warn "sfwbar: not running"
-pgrep -x crystal-dock >/dev/null 2>&1 && pass "crystal-dock: running" || warn "crystal-dock: not running"
+pgrep -x sfwbar >/dev/null 2>&1 && pass "sfwbar: running"
+pgrep -x noctalia >/dev/null 2>&1 && pass "noctalia: running"
+pgrep -x crystal-dock >/dev/null 2>&1 && pass "crystal-dock: running"
+

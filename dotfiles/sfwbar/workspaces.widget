@@ -1,0 +1,67 @@
+#Api2
+
+# Workspaces widget — workspace switcher
+Private {
+  Var ws_count = 9;
+
+  Function WsInit() {
+    for (Var i = 1; i <= ws_count; i = i + 1)
+      Config("button#ws_" + Str(i) + " { }");
+  }
+
+  export button "workspaces" {
+    style = "module"
+    class = "module"
+    value = "view-paged-symbolic"
+    tooltip = "Workspaces"
+    action = PopUp("WsPopup")
+  }
+
+  PopUp("WsPopup") {
+    style = "detail_popup"
+    grid {
+      style = "detail_grid"
+      label {
+        value = "Workspaces"
+        style = "detail_header"
+      }
+      grid {
+        style = "ws_grid"
+        for (Var i = 1; i <= ws_count; i = i + 1)
+          button {
+            style = "ws_button"
+            value = Str(i)
+            tooltip = "Workspace " + Str(i)
+            action = Exec("labwc -e 'GoToDesktop " + Str(i) + "'")
+          }
+      }
+      label {
+        value = "Scroll or click to switch"
+        style = "detail_hint"
+      }
+    }
+  }
+}
+
+#CSS
+
+grid#ws_grid {
+  -GtkWidget-direction: right;
+  padding: 4px;
+}
+
+button.ws_button {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  padding: 4px;
+  margin: 2px;
+  background-color: rgba(69, 71, 90, 0.4);
+  color: #a6adc8;
+  font-size: 11px;
+}
+
+button.ws_button:hover {
+  background-color: rgba(69, 71, 90, 0.6);
+  color: #cdd6f4;
+}

@@ -1,168 +1,46 @@
-/* SFWBar Catppuccin Mocha GTK Theme */
-/* Place at ~/.config/sfwbar/catppuccin-mocha.css */
+/* SFWBar — Noctalia-style floating bar theme
+ * Catppuccin Mocha palette */
 
 /* Catppuccin Mocha color palette */
 @define-color bg_color #1e1e2e;
 @define-color fg_color #cdd6f4;
-@define-color selected_bg_color #45475a;
-@define-color selected_fg_color #cdd6f4;
-@define-color tooltip_bg_color #313244;
-@define-color tooltip_fg_color #cdd6f4;
-@define-color link_color #89b4fa;
-@define-color visited_link_color #cba6f7;
+@define-color theme_bg_color #1e1e2e;
+@define-color theme_fg_color #cdd6f4;
+@define-color theme_text_color #cdd6f4;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color accent #89b4fa;
+@define-color urgent #f38ba8;
+@define-color success #a6e3a1;
 
-/* Error/Warning/Success colors */
-@define-color error_color #f38ba8;
-@define-color warning_color #f9e2af;
-@define-color success_color #a6e3a1;
+/* ============================================================
+ * Base — transparent window, floating pill bar
+ * ============================================================ */
 
-/* Window decorations */
-decoration {
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-decoration:backdrop {
+window#sfwbar {
+  background-color: transparent;
   box-shadow: none;
 }
 
-/* Buttons */
-button {
-  background-color: rgba(69, 71, 90, 0.4);
-  color: #cdd6f4;
-  border-radius: 4px;
-  border: 1px solid rgba(88, 91, 112, 0.6);
-  padding: 4px 8px;
-  min-height: 20px;
-}
-
-button:hover {
-  background-color: rgba(69, 71, 90, 0.6);
-}
-
-button:active {
-  background-color: rgba(69, 71, 90, 0.8);
-}
-
-button:focus {
-  border-color: #89b4fa;
-}
-
-/* Entries */
-entry {
-  background-color: rgba(49, 50, 68, 0.6);
-  color: #cdd6f4;
-  border-radius: 4px;
-  border: 1px solid #585b70;
-  padding: 4px 8px;
-  caret-color: #cdd6f4;
-}
-
-entry:focus {
-  border-color: #89b4fa;
-}
-
-/* Labels */
-label {
-  color: #cdd6f4;
-}
-
-/* Separators */
-separator {
-  color: rgba(88, 91, 112, 0.6);
-}
-
-/* Scrollbars */
-scrollbar {
-  background-color: transparent;
-}
-
-scrollbar slider {
-  background-color: rgba(69, 71, 90, 0.6);
-  border-radius: 4px;
-  min-width: 6px;
-  min-height: 6px;
-}
-
-scrollbar slider:hover {
-  background-color: rgba(69, 71, 90, 0.8);
-}
-
-/* Switches */
-switch {
-  background-color: rgba(69, 71, 90, 0.6);
+grid#layout {
+  background-color: rgba(30, 30, 46, 0.92);
   border-radius: 12px;
-  padding: 2px;
+  margin: 10px 180px 0px 180px;
+  padding: 0px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(88, 91, 112, 0.3);
 }
-
-switch:checked {
-  background-color: #89b4fa;
-}
-
-switch slider {
-  background-color: #cdd6f4;
-  border-radius: 10px;
-  min-width: 20px;
-  min-height: 20px;
-}
-
-/* Checkbuttons */
-checkbutton {
-  color: #cdd6f4;
-}
-
-checkbutton check {
-  background-color: rgba(49, 50, 68, 0.6);
-  border: 1px solid #585b70;
-  border-radius: 3px;
-  min-width: 16px;
-  min-height: 16px;
-}
-
-checkbutton check:checked {
-  background-color: #89b4fa;
-  border-color: #89b4fa;
-}
-
-/* Menus */
-menu,
-menuitem {
-  background-color: #313244;
-  color: #cdd6f4;
-  border-radius: 4px;
-  border: 1px solid #45475a;
-  padding: 4px 8px;
-}
-
-menuitem:hover {
-  background-color: #45475a;
-}
-
-menuitem label {
-  color: #cdd6f4;
-}
-
-/* Tooltips */
-tooltip {
-  background-color: #313244;
-  color: #cdd6f4;
-  border-radius: 4px;
-  border: 1px solid #45475a;
-  padding: 4px 8px;
-}
-
-tooltip label {
-  color: #cdd6f4;
-}
-
-/* ============================================================================
- * SFWBar Widget Styles
- * ============================================================================ */
 
 * {
-  background-color: #1e1e2e;
+  background-color: transparent;
   color: #cdd6f4;
 }
+
+/* ============================================================
+ * Modules — pill-shaped bar items
+ * ============================================================ */
 
 button, button image {
   min-height: 0px;
@@ -175,7 +53,7 @@ button, button image {
 }
 
 label {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: 'Noto Sans', 'sans-serif';
   font-size: 12px;
   color: #cdd6f4;
   background-color: transparent;
@@ -191,44 +69,64 @@ image {
   padding: 4px 8px;
   margin: 0px;
   -GtkWidget-vexpand: true;
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: transparent;
 }
 
 .module:hover {
-  background-color: rgba(69, 71, 90, 0.6);
+  background-color: rgba(69, 71, 90, 0.5);
 }
 
 .focused {
-  background-color: rgba(137, 180, 250, 0.3);
+  background-color: rgba(137, 180, 250, 0.2);
 }
 
 .urgent label {
   color: #f38ba8;
 }
 
-/* Text widgets */
-label#cpu-text, label#memory-text, label#network-text,
-label#volume-text, label#battery-text {
-  padding: 4px 8px;
-  background-color: rgba(69, 71, 90, 0.4);
+/* Module buttons — circular pill style */
+button.module {
+  padding: 6px;
+  border-radius: 8px;
+  background-color: transparent;
   color: #cdd6f4;
-  border-radius: 4px;
   margin: 2px;
+  min-width: 28px;
+  min-height: 28px;
 }
 
-label#cpu-text:hover, label#memory-text:hover, label#network-text:hover,
-label#volume-text:hover, label#battery-text:hover {
-  background-color: rgba(69, 71, 90, 0.6);
+button.module:hover {
+  background-color: rgba(69, 71, 90, 0.5);
 }
 
-/* Pager */
+button.module:active {
+  background-color: rgba(69, 71, 90, 0.7);
+}
+
+/* ============================================================
+ * Clock — centered, prominent
+ * ============================================================ */
+
+label#clock {
+  font-size: 13px;
+  font-weight: bold;
+  padding: 4px 12px;
+  -GtkWidget-vexpand: true;
+  -GtkWidget-valign: center;
+  color: #cdd6f4;
+}
+
+/* ============================================================
+ * Pager — workspace dots
+ * ============================================================ */
+
 grid#pager {
-  border-radius: 4px;
-  border-color: #585b70;
+  border-radius: 6px;
+  border-color: rgba(88, 91, 112, 0.3);
   border-style: solid;
   border-width: 1px;
   margin: 4px;
-  padding: 0px;
+  padding: 2px 6px;
   background-color: transparent;
 }
 
@@ -236,9 +134,8 @@ button#pager_item {
   border-radius: 4px;
   border: none;
   outline: 0px;
-  margin-right: 2px;
-  margin-left: 2px;
-  padding: 0px;
+  margin: 1px 2px;
+  padding: 2px;
   -GtkWidget-halign: center;
   -GtkWidget-valign: center;
   background-color: transparent;
@@ -259,14 +156,121 @@ button#pager_item.occupied label {
 }
 
 button#pager_item:hover {
-  background-color: rgba(69, 71, 90, 0.6);
+  background-color: rgba(69, 71, 90, 0.5);
 }
 
-/* Tray */
+/* ============================================================
+ * Taskbar (bottom bar)
+ * ============================================================ */
+
+button.taskbar_item {
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 6px;
+  background-color: transparent;
+}
+
+button.taskbar_item:hover {
+  background-color: rgba(69, 71, 90, 0.5);
+}
+
+button.taskbar_item.active {
+  background-color: rgba(137, 180, 250, 0.2);
+}
+
+button.taskbar_item.urgent {
+  background-color: rgba(243, 139, 168, 0.2);
+}
+
+/* ============================================================
+ * Detail popup panels — dropdown from bar
+ * ============================================================ */
+
+window.detail_popup {
+  background: rgba(0, 0, 0, 0);
+  padding: 5px;
+}
+
+grid.detail_grid {
+  margin: 5px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(88, 91, 112, 0.4);
+  background-color: rgba(49, 50, 68, 0.95);
+  -GtkWidget-direction: bottom;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+label.detail_header {
+  font-size: 13px;
+  font-weight: bold;
+  color: #89b4fa;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(69, 71, 90, 0.6);
+  -GtkWidget-hexpand: true;
+}
+
+label.detail_value {
+  font-family: 'Noto Sans Mono', monospace;
+  font-size: 12px;
+  color: #cdd6f4;
+  padding: 8px 0px;
+  -GtkWidget-hexpand: true;
+}
+
+label.detail_hint {
+  font-size: 10px;
+  color: #a6adc8;
+  padding-top: 6px;
+  border-top: 1px solid rgba(69, 71, 90, 0.6);
+  -GtkWidget-hexpand: true;
+}
+
+grid.detail_button_row {
+  -GtkWidget-hexpand: true;
+  -GtkWidget-direction: right;
+}
+
+grid.detail_button_row button {
+  padding: 4px 8px;
+  margin: 2px;
+  border: 1px solid rgba(88, 91, 112, 0.4);
+  border-radius: 6px;
+  background-color: rgba(69, 71, 90, 0.3);
+  color: #cdd6f4;
+}
+
+grid.detail_button_row button:hover {
+  background-color: rgba(69, 71, 90, 0.5);
+  border-color: #89b4fa;
+}
+
+scale.detail_slider {
+  -GtkWidget-direction: right;
+  margin: 4px 0px;
+}
+
+progressbar.detail_progress trough {
+  min-height: 6px;
+  border-radius: 3px;
+  background-color: rgba(69, 71, 90, 0.4);
+  border: 1px solid rgba(88, 91, 112, 0.3);
+}
+
+progressbar.detail_progress progress {
+  min-height: 6px;
+  border-radius: 3px;
+  background-color: #a6e3a1;
+}
+
+/* ============================================================
+ * Tray
+ * ============================================================ */
+
 button#tray_item {
   margin: 0px;
   border: none;
-  padding: 0px;
+  padding: 2px;
   background-color: transparent;
 }
 
@@ -277,6 +281,69 @@ button#tray_item.passive {
 button#tray_item image {
   -GtkWidget-valign: center;
   -GtkWidget-vexpand: true;
-  padding: 3px;
+  padding: 2px;
   margin: 0px;
+}
+
+/* ============================================================
+ * Session popup
+ * ============================================================ */
+
+window#SessionPopup {
+  background: rgba(0,0,0,0);
+  -GtkWidget-direction: right;
+  padding: 5px;
+}
+
+grid#SessionPopup {
+  -GtkWidget-direction: bottom;
+  -GtkWidget-hexpand: true;
+  margin: 5px;
+  border-radius: 10px;
+  border: 1px solid rgba(88, 91, 112, 0.4);
+  padding: 10px;
+  background-color: rgba(49, 50, 68, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+ * Workspace grid (popup)
+ * ============================================================ */
+
+grid#ws_grid {
+  -GtkWidget-direction: right;
+  padding: 4px;
+}
+
+button.ws_button {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  padding: 4px;
+  margin: 2px;
+  background-color: rgba(69, 71, 90, 0.4);
+  color: #a6adc8;
+  font-size: 11px;
+}
+
+button.ws_button:hover {
+  background-color: rgba(69, 71, 90, 0.6);
+  color: #cdd6f4;
+}
+
+/* ============================================================
+ * Tooltips
+ * ============================================================ */
+
+tooltip {
+  background-color: rgba(49, 50, 68, 0.95);
+  color: #cdd6f4;
+  border-radius: 6px;
+  border: 1px solid rgba(88, 91, 112, 0.4);
+  padding: 6px 10px;
+}
+
+tooltip label {
+  color: #cdd6f4;
+  font-size: 11px;
 }

@@ -180,7 +180,7 @@ section "2. Backup Current Configs"
 BACKUP_DIR=""
 if [[ "$NO_BACKUP" == "false" ]]; then
   BACKUP_DIR="$HOME/.config/labwc-backup-$(date +%Y%m%d-%H%M%S)"
-  mkdir -p "$BACKUP_DIR/labwc" "$BACKUP_DIR/sfwbar"
+  mkdir -p "$BACKUP_DIR/labwc" "$BACKUP_DIR/sfwbar" "$BACKUP_DIR/crystal-dock"
 
   BACKUP_COUNT=0
   for cfg in rc.xml autostart environment menu.xml themerc-override; do
@@ -204,6 +204,12 @@ if [[ "$NO_BACKUP" == "false" ]]; then
     pass "sfwbar/$(basename "$f")"
     BACKUP_COUNT=$((BACKUP_COUNT + 1))
   done
+
+  if [[ -d "$HOME/.config/crystal-dock" ]]; then
+    cp -r "$HOME/.config/crystal-dock/"* "$BACKUP_DIR/crystal-dock/" 2>/dev/null || true
+    pass "crystal-dock/ (backed up)"
+    BACKUP_COUNT=$((BACKUP_COUNT + 1))
+  fi
 
   if [[ "$BACKUP_COUNT" -eq 0 ]]; then
     warn "No existing configs found to backup"
@@ -243,6 +249,9 @@ section "4. Install Default Configs"
 
 INSTALL_LOG=$(mktemp)
 trap 'rm -f "$INSTALL_LOG"' EXIT
+
+# Enforce default crystal-dock configuration by wiping user modifications
+rm -rf "$HOME/.config/crystal-dock"
 
 if [[ -f "$PROJECT_DIR/dotfiles/install.sh" ]]; then
   if bash "$PROJECT_DIR/dotfiles/install.sh" > "$INSTALL_LOG" 2>&1; then

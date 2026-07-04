@@ -301,6 +301,7 @@ declare -A OUTPUT_MAP=(
     [mako.ini.tmpl]="$HOME/.config/mako/config"
     [foot.ini.tmpl]="$HOME/.config/foot/foot.ini"
     [qt6ct.conf.tmpl]="$HOME/.config/qt6ct/qt6ct.conf"
+    [fuzzel.ini.tmpl]="$HOME/.config/fuzzel/fuzzel.ini"
 )
 
 # Also write zebar CSS to both locations
@@ -456,6 +457,16 @@ cmd_apply() {
         mkdir -p "$HOME/.config/qt6ct"
         echo "$qt6ct_cfg" > "$HOME/.config/qt6ct/qt6ct.conf"
         pass "qt6ct config"
+        ((applied++))
+    fi
+
+    # Fuzzel
+    local fuzzel_cfg
+    fuzzel_cfg=$(render_template "$TEMPLATES_DIR/fuzzel.ini.tmpl")
+    if [[ -n "$fuzzel_cfg" ]]; then
+        mkdir -p "$HOME/.config/fuzzel"
+        echo "$fuzzel_cfg" > "$HOME/.config/fuzzel/fuzzel.ini"
+        pass "fuzzel config"
         ((applied++))
     fi
 

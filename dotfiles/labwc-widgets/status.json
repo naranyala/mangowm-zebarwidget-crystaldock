@@ -1,6 +1,6 @@
 {
   "statusbar": "sfwbar",
-  "dock": "crystal",
+  "dock": "none",
   "theme": "catppuccin-mocha",
   "widgets": {
     "clock": true,

@@ -9,29 +9,28 @@ XDG_SESSION_DESKTOP=labwc
 # Qt
 QT_QPA_PLATFORM=wayland
 QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+QT_STYLE_OVERRIDE=kvantum
 SDL_VIDEODRIVER=wayland
 CLUTTER_BACKEND=wayland
 MOZ_ENABLE_WAYLAND=1
 ELECTRON_OZONE_PLATFORM_HINT=auto
 
-# GTK Rendering (Wayland)
-GDK_BACKEND=wayland,x11
-GDK_RENDERING=image
-GDK_FONTCONFIG_HINT=1
-PANGOCAIRO_BACKEND=fontconfig
+# GTK Rendering (Wayland only — no x11 fallback)
+GDK_BACKEND=wayland
 GTK_USE_PORTAL=1
 
 # Cursor
 XCURSOR_THEME={{CURSOR_THEME}}
 XCURSOR_SIZE={{CURSOR_SIZE}}
 
-# Font Rendering
-FONTCONFIG_HINT=hintfull
-FREETYPE_PROPERTIES=truetype:interpreter=25
+# Font Rendering — FreeType interpreter v35 (latest)
+FREETYPE_PROPERTIES=truetype:interpreter-version=35
+
+# Fontconfig — load user config
+FONTCONFIG_FILE=${XDG_CONFIG_HOME:-$HOME/.config}/fontconfig/fonts.conf
 
 # Qt Theme
 QT_QPA_PLATFORMTHEME=qt6ct
-QT_STYLE_OVERRIDE=kvantum
 
 # Foot terminal
 FOOT_TERM=foot

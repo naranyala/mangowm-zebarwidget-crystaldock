@@ -106,7 +106,7 @@ section "Runtime Dependencies"
 case "$PKG_MGR" in
   apt)
     RUNTIME_PKGS=(
-      swaybg foot rofi-wayland
+      swaybg foot rofi-wayland fuzzel cliphist jgmenu
       grim slurp wl-clipboard
       playerctl
       libinput-tools
@@ -116,7 +116,7 @@ case "$PKG_MGR" in
     ;;
   dnf)
     RUNTIME_PKGS=(
-      swaybg foot rofi-wayland
+      swaybg foot rofi-wayland fuzzel cliphist jgmenu
       grim slurp wl-clipboard
       playerctl
       libinput-utils
@@ -126,7 +126,7 @@ case "$PKG_MGR" in
     ;;
   pacman)
     RUNTIME_PKGS=(
-      swaybg foot rofi-wayland
+      swaybg foot rofi-wayland fuzzel cliphist jgmenu
       grim slurp wl-clipboard
       playerctl
       libinput
@@ -136,7 +136,7 @@ case "$PKG_MGR" in
     ;;
   zypper)
     RUNTIME_PKGS=(
-      swaybg foot rofi
+      swaybg foot rofi fuzzel cliphist jgmenu
       grim slurp wl-clipboard
       playerctl
       libinput-tools
@@ -154,50 +154,22 @@ section "Optional Dependencies"
 case "$PKG_MGR" in
   apt)
     OPTIONAL_PKGS=(
-      gammastep
-      mako
-      dunst
-      lxpolkit
-      network-manager-gnome
-      blueman
-      swayidle
-      swaylock
+      gammastep mako dunst lxpolkit network-manager-gnome blueman swayidle swaylock udiskie gnome-keyring
     )
     ;;
   dnf)
     OPTIONAL_PKGS=(
-      gammastep
-      mako
-      dunst
-      polkit-gnome
-      network-manager-applet
-      blueman
-      swayidle
-      swaylock
+      gammastep mako dunst polkit-gnome network-manager-applet blueman swayidle swaylock udiskie gnome-keyring
     )
     ;;
   pacman)
     OPTIONAL_PKGS=(
-      gammastep
-      mako
-      dunst
-      polkit-gnome
-      network-manager-applet
-      blueman
-      swayidle
-      swaylock
+      gammastep mako dunst polkit-gnome network-manager-applet blueman swayidle swaylock udiskie gnome-keyring
     )
     ;;
   zypper)
     OPTIONAL_PKGS=(
-      gammastep
-      mako
-      dunst
-      polkit-gnome
-      NetworkManager-applet
-      blueman
-      swayidle
-      swaylock
+      gammastep mako dunst polkit-gnome NetworkManager-applet blueman swayidle swaylock udiskie gnome-keyring
     )
     ;;
 esac
