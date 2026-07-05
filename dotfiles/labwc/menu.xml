@@ -3,44 +3,57 @@
   <item label="Terminal">
     <action name="Execute"><command>foot</command></action>
   </item>
-  <item label="Fuzzel Launcher">
+  <item label="Applications Launcher">
     <action name="Execute"><command>fuzzel</command></action>
   </item>
-  <menu id="apps" label="Applications" execute="obamenu" />
+  <item label="Dotfiles Hub (Fuzzel Menu)">
+    <action name="Execute"><command>actions.sh dotfiles-menu</command></action>
+  </item>
+  <menu id="apps" label="All Applications" execute="obamenu" />
+  
   <separator/>
-  <item label="Wallpaper (Random)">
-    <action name="Execute"><command>wallpaper random</command></action>
-  </item>
-  <item label="Wallpaper Sync">
-    <action name="Execute"><command>wallpaper sync</command></action>
-  </item>
+
+  <!-- LABWC NATIVE CONTROLS -->
+  <menu id="labwc-controls" label="Window Manager (Labwc)">
+    <item label="Toggle Fullscreen"><action name="ToggleFullscreen"/></item>
+    <item label="Toggle Maximize"><action name="ToggleMaximize"/></item>
+    <item label="Iconify (Minimize)"><action name="Iconify"/></item>
+    <item label="Toggle Decorations"><action name="ToggleDecorations"/></item>
+    <item label="Show Desktop"><action name="ShowDesktop"/></item>
+    <separator/>
+    <item label="Reconfigure Labwc"><action name="Reconfigure"/></item>
+  </menu>
+
+  <!-- DESKTOP ENGINES -->
+  <menu id="desktop-engines" label="Desktop Engines (UI)">
+    <item label="Restart SFWBar"><action name="Execute"><command>pkill sfwbar; sfwbar &amp;</command></action></item>
+    <item label="Launch Crystal Dock"><action name="Execute"><command>crystal-dock --start --overlay</command></action></item>
+    <item label="Theme &amp; Aesthetics Menu"><action name="Execute"><command>actions.sh menu-aesthetics</command></action></item>
+    <item label="Wallpaper (Randomize)"><action name="Execute"><command>wallpaper random</command></action></item>
+  </menu>
+
+  <!-- FUZZEL UTILITIES -->
+  <menu id="fuzzel-utilities" label="Fuzzel Tools">
+    <item label="Emoji Picker"><action name="Execute"><command>actions.sh fuzzel-emoji</command></action></item>
+    <item label="Calculator"><action name="Execute"><command>actions.sh fuzzel-calc</command></action></item>
+    <item label="Clipboard History"><action name="Execute"><command>actions.sh clipboard show</command></action></item>
+    <item label="WiFi Manager"><action name="Execute"><command>actions.sh wifi-menu</command></action></item>
+    <item label="Bluetooth Manager"><action name="Execute"><command>actions.sh bluetooth-menu</command></action></item>
+  </menu>
+
+  <!-- HARDWARE & DISPLAY -->
+  <menu id="hardware-display" label="Hardware &amp; Display">
+    <item label="Toggle Dark Mode"><action name="Execute"><command>gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || gsettings set org.gnome.desktop.interface color-scheme 'default'</command></action></item>
+    <item label="Toggle Night Light"><action name="Execute"><command>gammastep -m randr -t 6500:3500 -g 1.0 -r</command></action></item>
+    <separator/>
+    <item label="Screenshot (Area)"><action name="Execute"><command>flameshot gui</command></action></item>
+    <item label="Screenshot (Full)"><action name="Execute"><command>flameshot full -c</command></action></item>
+  </menu>
+
   <separator/>
-  <item label="crystal-dock">
-    <action name="Execute"><command>crystal-dock --start --overlay</command></action>
-  </item>
-  <item label="SFWBar Widgets">
-    <action name="Execute"><command>sfwbar</command></action>
-  </item>
-  <separator/>
-  <item label="Night Mode">
-    <action name="Execute"><command>gammastep -m randr -t 6500:3500 -g 1.0 -r</command></action>
-  </item>
-  <item label="Toggle Dark Mode">
-    <action name="Execute"><command>gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || gsettings set org.gnome.desktop.interface color-scheme 'default'</command></action>
-  </item>
-  <separator/>
-  <item label="Screenshot (Area)">
-    <action name="Execute"><command>grim -g "$(slurp)" - | wl-copy</command></action>
-  </item>
-  <item label="Screenshot (Full)">
-    <action name="Execute"><command>grim - | wl-copy</command></action>
-  </item>
-  <separator/>
-  <item label="Power Menu">
+  
+  <item label="System Power Menu">
     <action name="Execute"><command>actions.sh power-menu</command></action>
-  </item>
-  <item label="Reload Config">
-    <action name="Reload"/>
   </item>
   <item label="Exit labwc">
     <action name="Exit"/>

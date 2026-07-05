@@ -39,6 +39,7 @@
     <keybind key="A-F4"><action name="Close"/></keybind>
     <keybind key="W-m"><action name="Execute"><command>vlc</command></action></keybind>
     <keybind key="W-S-s"><action name="Execute"><command>shell-mode-picker.sh</command></action></keybind>
+    <keybind key="W-x"><action name="Execute"><command>actions.sh dotfiles-menu</command></action></keybind>
 
 
     <!-- Launchers -->
