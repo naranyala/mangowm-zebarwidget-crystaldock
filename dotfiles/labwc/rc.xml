@@ -102,12 +102,12 @@
     <keybind key="XF86AudioPrev"><action name="Execute"><command>playerctl previous</command></action></keybind>
 
     <!-- Screenshots -->
-    <keybind key="Print"><action name="Execute"><command>grim -g "$(slurp)" - | wl-copy</command></action></keybind>
-    <keybind key="A-Print"><action name="Execute"><command>grim - | wl-copy</command></action></keybind>
-    <keybind key="S-Print"><action name="Execute"><command>grim - | wl-copy</command></action></keybind>
-    <keybind key="C-Print"><action name="Execute"><command>grim -g "$(slurp -w)" - | wl-copy</command></action></keybind>
-    <keybind key="S-A-Print"><action name="Execute"><command>screenshot.sh annotate</command></action></keybind>
-    <keybind key="S-C-Print"><action name="Execute"><command>screenshot.sh annotate-full</command></action></keybind>
+    <keybind key="Print"><action name="Execute"><command>flameshot gui</command></action></keybind>
+    <keybind key="A-Print"><action name="Execute"><command>flameshot full -c</command></action></keybind>
+    <keybind key="S-Print"><action name="Execute"><command>flameshot full -c</command></action></keybind>
+    <keybind key="C-Print"><action name="Execute"><command>flameshot gui --delay 2000</command></action></keybind>
+    <keybind key="S-A-Print"><action name="Execute"><command>flameshot gui</command></action></keybind>
+    <keybind key="S-C-Print"><action name="Execute"><command>flameshot full -c</command></action></keybind>
 
     <!-- Clipboard -->
     <keybind key="W-v"><action name="Execute"><command>cliphist list | fuzzel -d | cliphist decode | wl-copy</command></action></keybind>
@@ -249,10 +249,10 @@
     </item>
     <separator/>
     <item label="Screenshot (Area)">
-      <action name="Execute"><command>grim -g "$(slurp)" - | wl-copy</command></action>
+      <action name="Execute"><command>flameshot gui</command></action>
     </item>
     <item label="Screenshot (Full)">
-      <action name="Execute"><command>grim - | wl-copy</command></action>
+      <action name="Execute"><command>flameshot full -c</command></action>
     </item>
     <separator/>
     <item label="Power Menu">

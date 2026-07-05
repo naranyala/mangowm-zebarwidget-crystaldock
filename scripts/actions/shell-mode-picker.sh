@@ -11,7 +11,8 @@ CURRENT="$(cat "$CFG" 2>/dev/null || echo noctalia)"
 
 # Define available modes with descriptions
 declare -A MODES=(
-    ["noctalia"]="  Noctalia Shell — Full-featured shell (default)"
+    ["dms"]="  Dank Material Shell — Integrated shell (default)"
+    ["noctalia"]="  Noctalia Shell — Full-featured shell"
     ["sfwbar-plus"]="  OCWS Full — Dual panel with dock, desktop widgets, all features"
     ["sfwbar"]="  OCWS Minimal — Single top panel, lightweight"
     ["crystal"]="  Crystal Dock — External dock"
@@ -19,7 +20,7 @@ declare -A MODES=(
 
 # Build fuzzel input: current mode marker + all modes
 OPTIONS=""
-for mode in "noctalia" "sfwbar-plus" "sfwbar" "crystal"; do
+for mode in "dms" "noctalia" "sfwbar-plus" "sfwbar" "crystal"; do
     desc="${MODES[$mode]}"
     if [ "$mode" = "$CURRENT" ]; then
         OPTIONS="${OPTIONS} [active] ${desc}\n"
@@ -46,6 +47,7 @@ fi
 # Parse the selected mode
 NEW_MODE=""
 case "$SELECTED" in
+    *"Dank Material Shell"*) NEW_MODE="dms" ;;
     *"Noctalia"*)      NEW_MODE="noctalia" ;;
     *"OCWS Full"*)     NEW_MODE="sfwbar-plus" ;;
     *"OCWS Minimal"*)  NEW_MODE="sfwbar" ;;

@@ -12,13 +12,13 @@ if [ -z "$MODE" ]; then
   echo "  sfwbar       labwc + sfwbar only (minimal OCWS)"
   echo "  crystal      labwc + crystal-dock only"
   echo ""
-  echo "Current mode: $(cat ~/.config/labwc-widgets/shell-mode 2>/dev/null || echo noctalia)"
+  echo "Current mode: $(cat ~/.config/ocws/mode 2>/dev/null || cat ~/.config/labwc-widgets/shell-mode 2>/dev/null || echo noctalia)"
   exit 0
 fi
 
-if [ "$MODE" != "noctalia" ] && [ "$MODE" != "sfwbar-plus" ] && [ "$MODE" != "sfwbar" ] && [ "$MODE" != "crystal" ]; then
+if [ "$MODE" != "dms" ] && [ "$MODE" != "noctalia" ] && [ "$MODE" != "sfwbar-plus" ] && [ "$MODE" != "sfwbar" ] && [ "$MODE" != "crystal" ]; then
     echo "Error: Invalid mode '$MODE'"
-    echo "Valid modes: noctalia, sfwbar-plus, sfwbar, crystal"
+    echo "Valid modes: dms, noctalia, sfwbar-plus, sfwbar, crystal"
     exit 1
 fi
 

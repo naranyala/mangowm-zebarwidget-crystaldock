@@ -6,8 +6,8 @@ echo "Installing OCWS dependencies for Arch Linux..."
 PKGS=(
     labwc sfwbar fuzzel foot rofi mako qt6ct
     swaybg swayidle swaylock gammastep dunst
-    playerctl wl-clipboard cliphist grim slurp
-    jq crudini libxml2
+    playerctl wl-clipboard cliphist grim slurp flameshot
+    jq crudini libxml2 brightnessctl wlr-randr nautilus gnome-keyring xdotool inotify-tools imagemagick wireplumber
 )
 
 # Use paru or yay if available, otherwise fallback to pacman

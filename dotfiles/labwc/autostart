@@ -42,6 +42,9 @@ if command -v toggle-shell >/dev/null 2>&1; then
   # Check for environment variable first, then config file, else default
   if [ -n "${LABWC_SHELL_MODE:-}" ]; then
     toggle-shell "$LABWC_SHELL_MODE"
+  elif [ -f "$HOME/.config/ocws/mode" ]; then
+    MODE="$(cat "$HOME/.config/ocws/mode")"
+    toggle-shell "$MODE"
   elif [ -f "$HOME/.config/labwc-widgets/shell-mode" ]; then
     MODE="$(cat "$HOME/.config/labwc-widgets/shell-mode")"
     toggle-shell "$MODE"
@@ -98,6 +101,13 @@ if command -v swayidle >/dev/null 2>&1; then
     timeout 300 'swaylock -f -c 000000' \
     timeout 360 'wlr-randr --output eDP-1 --off' resume 'wlr-randr --output eDP-1 --on' \
     before-sleep 'swaylock -f -c 000000' &
+fi
+
+# --- Screenshot daemon ---
+if command -v flameshot >/dev/null 2>&1; then
+  pkill -x flameshot 2>/dev/null || true
+  sleep 0.1
+  flameshot &
 fi
 
 # --- Autorun Programs ---

@@ -6,8 +6,8 @@ echo "Installing OCWS dependencies for Fedora..."
 PKGS=(
     labwc fuzzel foot rofi mako qt6ct
     swaybg swayidle swaylock gammastep dunst
-    playerctl wl-clipboard cliphist grim slurp
-    jq crudini libxml2
+    playerctl wl-clipboard cliphist grim slurp flameshot
+    jq crudini libxml2 brightnessctl wlr-randr nautilus gnome-keyring xdotool inotify-tools ImageMagick wireplumber
 )
 
 if dnf search sfwbar | grep -qi "sfwbar"; then

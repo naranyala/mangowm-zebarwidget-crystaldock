@@ -55,7 +55,6 @@ if [ -f "${SCRIPT_DIR}/install-distribution.sh" ]; then
         2)
             echo -e "\n${CYAN}==>${NC} Starting comprehensive distribution installer..."
             bash "${SCRIPT_DIR}/install-distribution.sh" "$@"
-            exit 0
             ;;
         *)
             echo -e "\n${CYAN}==>${NC} Starting quick installer..."
@@ -75,6 +74,13 @@ if ! command -v labwc >/dev/null 2>&1 || ! command -v sfwbar >/dev/null 2>&1 || 
     echo -e "  ${RED}Options:${NC}"
     echo -e "    1) Install via package manager (${SCRIPT_DIR}/install-distribution.sh)"
     echo -e "    2) Build from source (${SCRIPT_DIR}/build-ocws-core.sh all)"
+    echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
+    read -r
+fi
+
+if [[ "$MODE" == "labwc-dms" ]] && ! command -v dms >/dev/null 2>&1; then
+    echo -e "\n${YELLOW}⚠${NC} Dank Material Shell (dms) is missing!"
+    echo -e "  You will need to install it manually for this mode to work correctly."
     echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
     read -r
 fi
@@ -185,6 +191,14 @@ if [[ "$MODE" == "full" ]] && [ -d "$SCRIPT_DIR/dotfiles/noctalia" ]; then
     mkdir -p ~/.config/noctalia
     rsync -a "$SCRIPT_DIR/dotfiles/noctalia/" ~/.config/noctalia/ 2>/dev/null || true
     pass "noctalia config synced."
+fi
+
+# Deploy DankMaterialShell
+if [ -d "$SCRIPT_DIR/dotfiles/DankMaterialShell" ]; then
+    info "Deploying Dank Material Shell configuration..."
+    mkdir -p ~/.config/DankMaterialShell
+    rsync -a "$SCRIPT_DIR/dotfiles/DankMaterialShell/" ~/.config/DankMaterialShell/ 2>/dev/null || true
+    pass "Dank Material Shell config synced."
 fi
 
 # Deploy Zebar

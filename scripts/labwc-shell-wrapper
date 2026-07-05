@@ -15,9 +15,12 @@ else
         MODE="$LABWC_SHELL_MODE"
     else
         # Fall back to per-user config
-        USER_CONFIG="$HOME/.config/labwc-widgets/shell-mode"
-        if [ -f "$USER_CONFIG" ]; then
-            MODE="$(cat "$USER_CONFIG" 2>/dev/null)"
+        USER_CONFIG_NEW="$HOME/.config/ocws/mode"
+        USER_CONFIG_OLD="$HOME/.config/labwc-widgets/shell-mode"
+        if [ -f "$USER_CONFIG_NEW" ]; then
+            MODE="$(cat "$USER_CONFIG_NEW" 2>/dev/null)"
+        elif [ -f "$USER_CONFIG_OLD" ]; then
+            MODE="$(cat "$USER_CONFIG_OLD" 2>/dev/null)"
         else
             MODE="$DEFAULT_MODE"
         fi

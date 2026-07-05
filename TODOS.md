@@ -484,6 +484,11 @@ no error handling. Broken widget silently takes down entire bar.
 - **`ocws-network-menu` & `ocws-bluetooth-menu`**: C-native fuzzel wrappers replacing `scripts/actions/wifi-menu.sh` and `scripts/actions/bluetooth-menu.sh` using `libnm` (NetworkManager) and `bluez` DBus interfaces.
 - **`ocws-launcher`**: A unified C binary replacing `launcher.sh`, `fuzzel-emoji.sh`, and `fuzzel-calc.sh`.
 - **Component API**: Dynamic UI injection via DBus instead of static `.widget` includes.
+- **Dependency Reduction**: Replace heavy external packages with native C implementations:
+  - Replace `inotify-tools` (`inotifywait`) by using Linux's native `inotify(7)` API in `ocws-brokerd`.
+  - Replace `imagemagick` (`convert`) in media widget updaters by using lightweight C image manipulation (e.g., `stb_image` or `cairo`).
+  - Replace `xdotool` in workspace scripts by using Wayland's `wlr-foreign-toplevel-management` or `wlr-layer-shell` protocols natively in C.
+  - Replace `wireplumber` CLI (`wpctl`) by hooking directly into the PipeWire/WirePlumber C API for audio controls.
 
 ---
 

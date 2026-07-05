@@ -37,7 +37,7 @@
   </item>
   <separator/>
   <item label="Power Menu">
-    <action name="Execute"><command>~/.config/labwc/scripts/actions/power-menu.sh</command></action>
+    <action name="Execute"><command>actions.sh power-menu</command></action>
   </item>
   <item label="Reload Config">
     <action name="Reload"/>

@@ -8,8 +8,8 @@ sudo apt update
 PKGS=(
     labwc fuzzel foot rofi mako-notifier qt6ct
     swaybg swayidle swaylock gammastep dunst
-    playerctl wl-clipboard grim slurp
-    jq crudini libxml2-utils
+    playerctl wl-clipboard grim slurp flameshot
+    jq crudini libxml2-utils brightnessctl wlr-randr nautilus gnome-keyring xdotool inotify-tools imagemagick wireplumber
 )
 
 # sfwbar is usually not in standard Debian repos, we may need a warning
