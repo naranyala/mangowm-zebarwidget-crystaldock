@@ -10,15 +10,14 @@ if [ -n "${1:-}" ]; then
     MODE="$1"
     MODE="${MODE#labwc-}"
 
-    if [ "$MODE" != "dms" ] && [ "$MODE" != "noctalia" ] && [ "$MODE" != "sfwbar-plus" ] && [ "$MODE" != "sfwbar" ] && [ "$MODE" != "crystal" ]; then
+    if [ "$MODE" != "dms" ] && [ "$MODE" != "noctalia" ] && [ "$MODE" != "doublepanel" ] && [ "$MODE" != "crystaldock" ]; then
         echo "Usage: $0 <mode>"
         echo ""
         echo "Modes:"
-        echo "  dms          labwc + dankmaterialshell (default)"
+        echo "  doublepanel  labwc + double-panel sfwbar (default)"
+        echo "  crystaldock  labwc + sfwbar statusbar + crystal-dock"
+        echo "  dms          labwc + dankmaterialshell"
         echo "  noctalia     labwc + noctalia shell"
-        echo "  sfwbar-plus  labwc + enhanced OCWS dual panel"
-        echo "  sfwbar       labwc + sfwbar only (minimal OCWS)"
-        echo "  crystal      labwc + crystal-dock only"
         exit 1
     fi
 
@@ -79,8 +78,8 @@ case "$NEW" in
             exit 1
         fi
         ;;
-    sfwbar-plus)
-        echo "Starting OCWS (sfwbar-plus mode)..."
+    doublepanel)
+        echo "Starting OCWS (double-panel sfwbar)..."
         if command -v ocws-plugin-loader.sh >/dev/null 2>&1; then
             ocws-plugin-loader.sh
         fi
@@ -88,17 +87,14 @@ case "$NEW" in
         sleep 0.2
         nohup sfwbar -f "$HOME/.config/ocws/ocws.config" >/dev/null 2>&1 &
         ;;
-    sfwbar)
-        echo "Starting sfwbar only (minimal)..."
+    crystaldock)
+        echo "Starting sfwbar statusbar + crystal-dock..."
         if command -v ocws-plugin-loader.sh >/dev/null 2>&1; then
             ocws-plugin-loader.sh
         fi
         pkill -x sfwbar 2>/dev/null
         sleep 0.2
-        nohup sfwbar -f "$HOME/.config/ocws/ocws.config" >/dev/null 2>&1 &
-        ;;
-    crystal)
-        echo "Starting crystal-dock only..."
+        nohup sfwbar -f "$HOME/.config/ocws/sfwbar-full.config" >/dev/null 2>&1 &
         nohup crystal-dock >/dev/null 2>&1 &
         ;;
 esac
