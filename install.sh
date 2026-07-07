@@ -138,21 +138,31 @@ fi
 
 if [[ "$MODE" == "dms" ]] && ! command -v dms >/dev/null 2>&1; then
     echo -e "\n${YELLOW}⚠${NC} Dank Material Shell (dms) is missing!"
-    echo -e "  You will need to install it manually for this mode to work correctly."
+    echo -e "  This is a community shell that requires manual installation."
+    echo -e "  Recommendation: Compile it from source (e.g., https://github.com/dankshrine/dms)"
     echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
     read -r
 fi
 
-if [[ "$MODE" == "noctalia" ]] && ! command -v sfwbar >/dev/null 2>&1; then
-    echo -e "\n${YELLOW}⚠${NC} sfwbar is required for the Noctalia shell's statusbar."
-    echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
-    read -r
+if [[ "$MODE" == "noctalia" ]]; then
+    MISSING_NOCTALIA=""
+    command -v noctalia >/dev/null 2>&1 || MISSING_NOCTALIA="noctalia "
+    command -v sfwbar >/dev/null 2>&1 || MISSING_NOCTALIA+="sfwbar"
+    
+    if [ -n "$MISSING_NOCTALIA" ]; then
+        echo -e "\n${YELLOW}⚠${NC} Missing dependencies for Noctalia: ${MISSING_NOCTALIA}"
+        echo -e "  Noctalia is a custom shell that requires manual compilation."
+        echo -e "  Recommendation: Build from the official Noctalia repository."
+        echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
+        read -r
+    fi
 fi
 
 if [[ "$MODE" == "crystaldock" ]]; then
     if ! command -v crystal-dock >/dev/null 2>&1; then
         echo -e "\n${YELLOW}⚠${NC} crystal-dock is not installed."
-        echo -e "  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
+        echo -e "  Recommendation: Clone and build from https://github.com/igrekster/crystal-dock"
+        echo -e "\n  Press [ENTER] to continue anyway, or Ctrl+C to cancel."
         read -r
     fi
 fi
@@ -169,16 +179,20 @@ fi
 
 case "$MODE" in
     doublepanel)
-        echo -e "  Shell: OCWS full dual-panel setup"
+        echo -e "  Shell: OCWS dual-panel (top bar + dock via sfwbar)"
+        echo -e "  ${CYAN}  OCWS:${NC} full bar config, widgets, plugins, themes"
         ;;
     crystaldock)
-        echo -e "  Shell: crystal-dock (${CYAN}requires crystal-dock${NC})"
+        echo -e "  Shell: crystal-dock dock + sfwbar single statusbar (${CYAN}requires crystal-dock${NC})"
+        echo -e "  ${CYAN}  OCWS:${NC} single top statusbar via sfwbar-full.config"
         ;;
     dms)
         echo -e "  Shell: DankMaterialShell (${CYAN}requires dms${NC})"
+        echo -e "  ${CYAN}  OCWS:${NC} infrastructure only (no sfwbar bars)"
         ;;
     noctalia)
         echo -e "  Shell: Noctalia (${CYAN}requires sfwbar${NC})"
+        echo -e "  ${CYAN}  OCWS:${NC} infrastructure only (no sfwbar bars)"
         ;;
 esac
 
@@ -209,9 +223,23 @@ info "Deploying Compositor Rules (labwc)..."
 cp -r "$SCRIPT_DIR/dotfiles/labwc/"* ~/.config/labwc/ 2>/dev/null || fail "Failed to deploy labwc configurations"
 pass "labwc configurations synced."
 
-# 4. Deploy OCWS Shell (common infrastructure for all modes)
+# 4. Deploy OCWS Shell (supporting infrastructure for all modes)
 info "Deploying the OCWS Shell..."
-rsync -a --exclude='user.config' "$SCRIPT_DIR/dotfiles/ocws/" ~/.config/ocws/ 2>/dev/null || cp -r "$SCRIPT_DIR/dotfiles/ocws/"* ~/.config/ocws/ 2>/dev/null || fail "Failed to deploy OCWS shell"
+case "$MODE" in
+    doublepanel)
+        # Full OCWS dual-panel bar config
+        rsync -a --exclude='user.config' "$SCRIPT_DIR/dotfiles/ocws/" ~/.config/ocws/ 2>/dev/null || cp -r "$SCRIPT_DIR/dotfiles/ocws/"* ~/.config/ocws/ 2>/dev/null || fail "Failed to deploy OCWS shell"
+        ;;
+    crystaldock)
+        # OCWS infrastructure + single top statusbar (no dock)
+        rsync -a --exclude='user.config' --exclude='ocws.config' "$SCRIPT_DIR/dotfiles/ocws/" ~/.config/ocws/ 2>/dev/null || cp -r "$SCRIPT_DIR/dotfiles/ocws/"* ~/.config/ocws/ 2>/dev/null || fail "Failed to deploy OCWS shell"
+        cp "$SCRIPT_DIR/dotfiles/ocws/sfwbar-full.config" ~/.config/ocws/ocws.config 2>/dev/null || true
+        ;;
+    *)
+        # Supporting infrastructure only — no sfwbar bar config at all
+        rsync -a --exclude='user.config' --exclude='ocws.config' --exclude='ocws.css' --exclude='theme.css' "$SCRIPT_DIR/dotfiles/ocws/" ~/.config/ocws/ 2>/dev/null || cp -r "$SCRIPT_DIR/dotfiles/ocws/"* ~/.config/ocws/ 2>/dev/null || fail "Failed to deploy OCWS shell"
+        ;;
+esac
 
 if [ ! -f ~/.config/ocws/user.config ]; then
     cp "$SCRIPT_DIR/dotfiles/ocws/user.config" ~/.config/ocws/user.config 2>/dev/null || true
@@ -502,7 +530,9 @@ validate_file "$HOME/.config/labwc/autostart" || ((ERRORS++))
 validate_file "$HOME/.config/labwc/menu.xml" || ((ERRORS++))
 
 # Verify OCWS
-validate_file "$HOME/.config/ocws/ocws.config" || ((ERRORS++))
+if [[ "$MODE" == "doublepanel" || "$MODE" == "crystaldock" ]]; then
+    validate_file "$HOME/.config/ocws/ocws.config" || ((ERRORS++))
+fi
 
 # Verify Launcher
 if [[ "$LAUNCHER" == "rofi" ]]; then
@@ -534,7 +564,7 @@ for script in "$SCRIPT_DIR/scripts/"*.sh; do
 validate_file_format "$HOME/.config/labwc/rc.xml" xml
 validate_file_format "$HOME/.config/labwc/menu.xml" xml
 
-if [ -f "$HOME/.config/ocws/ocws.config" ]; then
+if [[ "$MODE" == "doublepanel" || "$MODE" == "crystaldock" ]] && [ -f "$HOME/.config/ocws/ocws.config" ]; then
     validate_content "$HOME/.config/ocws/ocws.config" ocwsconfig
 fi
 

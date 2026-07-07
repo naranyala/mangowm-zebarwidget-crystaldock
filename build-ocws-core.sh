@@ -81,3 +81,4 @@ case "${1:-all}" in
 esac
 
 info "OCWS Core Build Complete!"
+echo -e "\n${YELLOW}Note:${NC} If you are using community shells like 'dms', 'noctalia', or 'crystal-dock', you will need to clone and build them manually from their respective repositories."
