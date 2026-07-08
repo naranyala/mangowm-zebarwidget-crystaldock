@@ -265,13 +265,13 @@ system("sfwbar-cmd bar-config topbar transparency 0.85");
 
 | Feature | DMS | Noctalia | OCWS |
 |---------|-----|----------|------|
-| Theme Engine | ✅ Matugen + JSON | ✅ TOML palettes | ✅ INI themes |
-| Bar Config | ✅ 4 bars, drag reorder | ✅ Single bar | ✅ Up to 4 bars |
-| Widget System | ✅ QML plugins | ✅ C++ widgets | ✅ .widget files |
-| Plugin Browser | ✅ Registry | ✅ Built-in | 🔜 Planned |
-| Live Preview | ✅ Instant | ✅ Instant | ✅ Instant |
-| Multi-monitor | ✅ Full | ✅ Basic | ✅ Full |
-| Health Check | ❌ | ❌ | ✅ Built-in |
-| Backup/Restore | ❌ | ❌ | ✅ Built-in |
-| Keybind Editor | ✅ Visual | ✅ Config file | 🔜 Planned |
+| Theme Engine |  Matugen + JSON |  TOML palettes |  INI themes |
+| Bar Config |  4 bars, drag reorder |  Single bar |  Up to 4 bars |
+| Widget System |  QML plugins |  C++ widgets |  .widget files |
+| Plugin Browser |  Registry |  Built-in |  Planned |
+| Live Preview |  Instant |  Instant |  Instant |
+| Multi-monitor |  Full |  Basic |  Full |
+| Health Check |  |  |  Built-in |
+| Backup/Restore |  |  |  Built-in |
+| Keybind Editor |  Visual |  Config file |  Planned |
 | Memory Usage | ~80MB | ~50MB | ~15MB |

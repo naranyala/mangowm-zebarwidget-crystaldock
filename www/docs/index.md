@@ -1,16 +1,45 @@
-# Welcome to OCWS
+# OCWS Documentation
 
-**OCWS** is a highly modular, lightning-fast Wayland Custom Shell ecosystem built around `labwc`, `sfwbar`, and `fuzzel`.
+OCWS is a native Wayland desktop shell built on C, GTK3, and labwc. This documentation covers installation, configuration, architecture, and development.
 
-It provides a suite of native C/GTK3 GUI utilities, daemons, and shell components designed to give you a gorgeous glassmorphic desktop experience while remaining extremely lightweight.
+## What is OCWS?
 
-## Why OCWS?
+OCWS replaces the typical GNOME/KDE stack with a set of focused C binaries and shell scripts. It runs on labwc (a Wayland compositor), uses sfwbar for panels and widgets, and fuzzel as the application launcher.
 
-* **Modular Modes:** Seamlessly switch between a full Single-Bar status mode and a Double-Panel layout (top status bar + bottom app dock).
-* **Native C Tools:** All included GUIs (Settings, Welcome, Dock Manager, LLM Runner, Workspace Manager) are built natively in C/GTK3 via Zig.
-* **Integrated Local AI:** Features `ocws-llm-runner`, a GTK3 LLM client natively hooked into `llama-cpp-python` and OCR screen-capture.
-* **Glassmorphic Design:** A unified aesthetic driven by dynamic `.css` tokens across all shell components.
+The result is a complete desktop environment that runs under 200 MB of RAM with zero JavaScript, Electron, or Qt runtime overhead.
 
-## Getting Started
+## Key Features
 
-Check out the [Getting Started](getting-started.md) guide to deploy OCWS on your machine.
+- **Pure C and GTK3** -- All GUI utilities are native binaries. No web technologies.
+- **Modular architecture** -- Panels, widgets, daemons, and plugins are independent units.
+- **Theme engine** -- One INI file propagates colors to 14 configuration surfaces.
+- **Multiple shell modes** -- Double panel, Noctalia floating island, Crystal Dock, minimal.
+- **Native settings GUI** -- Visual control for themes, appearance, keybindings, and system metrics.
+- **Security-hardened** -- ASan in CI, shell injection prevention, proper temp file handling.
+
+## Quick Start
+
+```bash
+git clone https://github.com/naranyala/labwc-fuzzel-sfwbar.git
+cd labwc-fuzzel-sfwbar
+./install.sh
+```
+
+Then select the labwc session from your display manager, or run `labwc` from a TTY.
+
+## Architecture
+
+| Layer | Component | Role |
+|-------|-----------|------|
+| Compositor | labwc | Window management, input, keybindings |
+| Shell UI | sfwbar | Panels, widgets, taskbar, tray |
+| Launcher | fuzzel | App launcher and dmenu-mode runner |
+| Layer Shell | gtk-layer-shell | Anchors surfaces to Wayland outputs |
+
+## Documentation Sections
+
+- **Getting Started** -- Installation, first-run, troubleshooting
+- **Configuration** -- Event bus API, plugin system, CSS customization
+- **Events API** -- Full IPC event contract with variable mappings
+- **Lessons Learned** -- 55+ implementation notes covering sfwbar internals, shell patterns, and security
+- **Planning** -- Architecture decisions, unification strategy, dependency analysis

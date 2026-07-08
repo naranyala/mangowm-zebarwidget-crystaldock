@@ -33,7 +33,7 @@ What each component provides and what breaks if removed.
 
 ## noctalia
 
-### ⚠️ Currently live on this system
+### ️ Currently live on this system
 `/home/naranyala/.config/labwc-widgets/shell-mode` contains `noctalia`. Removing it breaks the current session.
 
 ### Runtime — what breaks immediately

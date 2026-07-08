@@ -6,7 +6,7 @@ The `ocws-llm-runner` is a native C/GTK3 desktop client designed to interface sm
 
 - **Native UI:** A gorgeous, glassmorphic GTK3 chat interface that visually matches the rest of the OCWS ecosystem.
 - **Model Management:** Automatically scans for and allows you to dynamically load/eject `.gguf` language models from `~/Models/` without needing to restart the app.
-- **Seamless OCR Integration:** Features a built-in `OCR 📷` button that triggers a screen capture, extracts the text using Tesseract, and pastes it instantly into your chat prompt.
+- **Seamless OCR Integration:** Features a built-in `OCR ` button that triggers a screen capture, extracts the text using Tesseract, and pastes it instantly into your chat prompt.
 - **Session Continuity:** The Python backend safely manages chat history context across multi-turn conversations.
 
 ## Installation & Setup
@@ -28,5 +28,5 @@ Simply launch **OCWS Assistant** from your app launcher (or type `ocws-llm-runne
 
 1. Select your downloaded model from the dropdown header.
 2. Click **Load**.
-3. Type your query or click **OCR 📷** to grab code/text from anywhere on your screen.
+3. Type your query or click **OCR ** to grab code/text from anywhere on your screen.
 4. When finished, hit **Eject** to instantly free up your RAM/VRAM!

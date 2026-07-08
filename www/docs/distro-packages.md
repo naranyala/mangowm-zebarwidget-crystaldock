@@ -6,22 +6,22 @@ Every binary referenced at runtime by the OCWS dotfiles — shell mode scripts, 
 
 | Mark | Meaning |
 |---|---|
-| ✅ | In default repos |
-| ⚠ AUR/COPR/OBS | In unofficial user repos, semi-automated |
-| ❌ stable / ⚠ testing | Not in that branch |
-| ❌ build | Not packaged anywhere — must build from source |
-| ❌ | Not available at all |
+|  | In default repos |
+|  AUR/COPR/OBS | In unofficial user repos, semi-automated |
+|  stable /  testing | Not in that branch |
+|  build | Not packaged anywhere — must build from source |
+|  | Not available at all |
 
 ## Core Stack
 
 | Binary | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| labwc | ✅ community | ✅ backports+ | ✅ | ✅ |
-| sfwbar | ✅ community | ❌ stable / ⚠ testing | ⚠ COPR | ✅ |
-| rofi-wayland | ✅ community | ✅ | ✅ | ✅ |
-| fuzzel | ✅ community | ❌ stable / ⚠ testing | ✅ | ✅ |
-| foot | ✅ community | ✅ backports+ | ✅ | ✅ |
-| mako | ✅ community | ✅ (`mako-notifier`) | ✅ | ✅ |
+| labwc |  community |  backports+ |  |  |
+| sfwbar |  community |  stable /  testing |  COPR |  |
+| rofi-wayland |  community |  |  |  |
+| fuzzel |  community |  stable /  testing |  |  |
+| foot |  community |  backports+ |  |  |
+| mako |  community |  (`mako-notifier`) |  |  |
 
 
 
@@ -29,54 +29,54 @@ Every binary referenced at runtime by the OCWS dotfiles — shell mode scripts, 
 
 | Binary | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| wl-clipboard | ✅ | ✅ | ✅ | ✅ |
-| cliphist | ✅ community | ❌ LTS / ⚠ testing+ | ✅ | ✅ |
-| grim / slurp | ✅ | ✅ | ✅ | ✅ |
-| flameshot | ✅ | ✅ | ✅ | ✅ |
+| wl-clipboard |  |  |  |  |
+| cliphist |  community |  LTS /  testing+ |  |  |
+| grim / slurp |  |  |  |  |
+| flameshot |  |  |  |  |
 
 ## Display & Input
 
 | Binary | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| swaybg | ✅ | ✅ | ✅ | ✅ |
-| swayidle | ✅ | ✅ | ✅ | ✅ |
-| swaylock | ✅ | ✅ | ✅ | ✅ |
-| gammastep | ✅ | ✅ | ✅ | ✅ |
-| brightnessctl | ✅ | ✅ | ✅ | ✅ |
-| wlr-randr | ✅ | ✅ | ✅ | ✅ |
+| swaybg |  |  |  |  |
+| swayidle |  |  |  |  |
+| swaylock |  |  |  |  |
+| gammastep |  |  |  |  |
+| brightnessctl |  |  |  |  |
+| wlr-randr |  |  |  |  |
 
 ## Media & System
 
 | Binary | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| playerctl | ✅ | ✅ | ✅ | ✅ |
-| wireplumber | ✅ | ✅ | ✅ | ✅ |
-| NetworkManager (nmcli) | ✅ | ✅ | ✅ | ✅ |
-| bluez (bluetoothctl) | ✅ | ✅ | ✅ | ✅ |
-| libnotify (notify-send) | ✅ | ✅ (`libnotify-bin`) | ✅ | ✅ |
-| gnome-keyring | ✅ | ✅ | ✅ | ✅ |
-| nautilus | ✅ | ✅ | ✅ | ✅ |
-| xdotool | ✅ | ✅ | ✅ | ✅ |
+| playerctl |  |  |  |  |
+| wireplumber |  |  |  |  |
+| NetworkManager (nmcli) |  |  |  |  |
+| bluez (bluetoothctl) |  |  |  |  |
+| libnotify (notify-send) |  |  (`libnotify-bin`) |  |  |
+| gnome-keyring |  |  |  |  |
+| nautilus |  |  |  |  |
+| xdotool |  |  |  |  |
 
 ## Utilities
 
 | Binary | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| jq | ✅ | ✅ | ✅ | ✅ |
-| crudini | ✅ | ✅ | ✅ | ✅ |
-| libxml2 (`xmllint`) | ✅ | ✅ (`libxml2-utils`) | ✅ | ✅ (`libxml2-tools`) |
-| inotify-tools | ✅ | ✅ | ✅ | ✅ |
-| ImageMagick | ✅ | ✅ | ✅ | ✅ |
-| grim / slurp | ✅ | ✅ | ✅ | ✅ |
-| qt6ct | ✅ | ✅ | ✅ | ✅ |
+| jq |  |  |  |  |
+| crudini |  |  |  |  |
+| libxml2 (`xmllint`) |  |  (`libxml2-utils`) |  |  (`libxml2-tools`) |
+| inotify-tools |  |  |  |  |
+| ImageMagick |  |  |  |  |
+| grim / slurp |  |  |  |  |
+| qt6ct |  |  |  |  |
 
 ## Fonts
 
 | Font | Arch | Debian / Ubuntu | Fedora | openSUSE |
 |---|---|---|---|---|
-| Noto Sans / Mono | ✅ `noto-fonts` | ✅ `fonts-noto` | ✅ `google-noto-sans-fonts` + mono | ✅ `google-noto-sans-fonts` + mono |
-| DejaVu Sans | ✅ `ttf-dejavu` | ✅ `fonts-dejavu-core` | ✅ `dejavu-sans-fonts` | ✅ `dejavu-fonts` |
-| FiraCode Nerd Font | ⚠ AUR `ttf-firacode-nerd` | ⚠ `fonts-firacode` (unstable) | ⚠ COPR `fira-code-nerd-fonts` | ❌ download |
+| Noto Sans / Mono |  `noto-fonts` |  `fonts-noto` |  `google-noto-sans-fonts` + mono |  `google-noto-sans-fonts` + mono |
+| DejaVu Sans |  `ttf-dejavu` |  `fonts-dejavu-core` |  `dejavu-sans-fonts` |  `dejavu-fonts` |
+| FiraCode Nerd Font |  AUR `ttf-firacode-nerd` |  `fonts-firacode` (unstable) |  COPR `fira-code-nerd-fonts` |  download |
 
 ## Summary: Build Requirements
 

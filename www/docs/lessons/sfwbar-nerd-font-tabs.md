@@ -5,7 +5,7 @@
 Text widgets show Unicode replacement characters (tofu, like `□` or `▯`) where Nerd Font icons should appear:
 
 ```
-Expected: 󰁹 85%      󰃠 75%      󰂯 BT
+Expected:  85%       75%       BT
 Actual:   □ 85%      □ 75%      □ BT
 ```
 
@@ -17,19 +17,19 @@ sfwbar widgets use Nerd Font Unicode codepoints in their label `value` expressio
 
 ```ini
 # battery-text.widget
-value = If(XBatLvl > 90, "󰁹 ", ...
+value = If(XBatLvl > 90, " ", ...
 
 # brightness-text.widget
-value = "󰃠 " + Str(XBrightness, 0) + "%"
+value = " " + Str(XBrightness, 0) + "%"
 
 # bluetooth.widget
-value = If(XBtState = "On", "󰂯 BT", "󰂲 BT Off")
+value = If(XBtState = "On", " BT", " BT Off")
 
 # cpu-text.widget
-value = "󰍛 " + Str(XCpuLoad, 0) + "%"
+value = " " + Str(XCpuLoad, 0) + "%"
 
 # media-player.widget
-value = If(XMediaStatus = "Playing", "󰎈 ", ...
+value = If(XMediaStatus = "Playing", " ", ...
 ```
 
 These codepoints (U+E000–U+FFFF range) are from the **Private Use Area** — only fonts specifically designed to include them (Nerd Fonts, Font Awesome, Material Design Icons) will render them.
@@ -66,11 +66,11 @@ Widgets using Nerd Font private-use-area codepoints in `value` expressions:
 
 | Widget File | Glyph | Font Needed |
 |-------------|-------|-------------|
-| `battery-text.widget` | 󰁹 (U+F039) | Nerd Font |
-| `brightness-text.widget` | 󰃠 (U+F0E0) | Nerd Font |
-| `bluetooth.widget` | 󰂯 / 󰂲 (U+F0AF/U+F0B2) | Nerd Font |
-| `cpu-text.widget` | 󰍛 (U+F35B) | Nerd Font |
-| `media-player.widget` | 󰎈 (U+F388) | Nerd Font |
+| `battery-text.widget` |  (U+F039) | Nerd Font |
+| `brightness-text.widget` |  (U+F0E0) | Nerd Font |
+| `bluetooth.widget` |  /  (U+F0AF/U+F0B2) | Nerd Font |
+| `cpu-text.widget` |  (U+F35B) | Nerd Font |
+| `media-player.widget` |  (U+F388) | Nerd Font |
 
 ## Pattern To Remember
 

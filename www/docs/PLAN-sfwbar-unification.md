@@ -28,29 +28,29 @@ All three modes remain functional. The shell switcher (`toggle-shell`) continues
 
 | Feature | Crystal-Dock | OCWS Current | Gap |
 |---------|--------------|--------------|-----|
-| Dock-style launcher | ✅ Pinned app icons | ✅ `dock.widget` + `dock-apps.widget` | Done |
-| Magnification effect | ✅ Mac-like zoom | ❌ Not supported | **NEED** |
-| Running app indicators | ✅ Dot indicators | ✅ Taskbar has focused state | Partial |
-| Show desktop | ✅ Click action | ✅ `showdesktop.widget` | Done |
-| Icon rendering | ✅ High-res icons | ✅ Taskbar icons | Done |
+| Dock-style launcher |  Pinned app icons |  `dock.widget` + `dock-apps.widget` | Done |
+| Magnification effect |  Mac-like zoom |  Not supported | **NEED** |
+| Running app indicators |  Dot indicators |  Taskbar has focused state | Partial |
+| Show desktop |  Click action |  `showdesktop.widget` | Done |
+| Icon rendering |  High-res icons |  Taskbar icons | Done |
 
 ### 1.2 What Noctalia Provides
 
 | Feature | Noctalia | OCWS Current | Gap |
 |---------|----------|--------------|-----|
-| Top bar | ✅ Launcher, workspaces, clock, media, tray, system | ✅ Same layout | Done |
-| Control center | ✅ Toggle panel with WiFi, BT, volume, brightness | ✅ `ocws-control-center.widget` | Done |
-| Notification daemon | ✅ Built-in | ✅ `ocws-notify` + `ocws-osd-notify` | Done |
-| OSD popups | ✅ Volume, brightness, etc. | ✅ `ocws-osd-notify` | Done |
-| Dock | ✅ Optional bottom dock | ✅ `dock.widget` | Done |
-| Desktop widgets | ✅ Clock, weather, etc. | ✅ `desktop-*.widget` | Done |
-| Lock screen | ✅ Built-in blur | ✅ `ocws-lock` (swaylock) | Done |
-| Weather | ✅ API integration | ✅ `weather.widget` | Done |
-| System monitor | ✅ CPU, memory, disk graphs | ✅ `ocws-sysmon` | Done |
-| Wallpaper management | ✅ Transitions, automation | ✅ `ocws-wallpaper` | Done |
-| Theme engine | ✅ Builtin + community | ✅ INI-based theme engine | Done |
-| Animations | ✅ CSS transitions | ⚠️ Basic GTK3 transitions | Partial |
-| Glassmorphism | ✅ Blur, translucency | ⚠️ CSS-only (no real blur) | Partial |
+| Top bar |  Launcher, workspaces, clock, media, tray, system |  Same layout | Done |
+| Control center |  Toggle panel with WiFi, BT, volume, brightness |  `ocws-control-center.widget` | Done |
+| Notification daemon |  Built-in |  `ocws-notify` + `ocws-osd-notify` | Done |
+| OSD popups |  Volume, brightness, etc. |  `ocws-osd-notify` | Done |
+| Dock |  Optional bottom dock |  `dock.widget` | Done |
+| Desktop widgets |  Clock, weather, etc. |  `desktop-*.widget` | Done |
+| Lock screen |  Built-in blur |  `ocws-lock` (swaylock) | Done |
+| Weather |  API integration |  `weather.widget` | Done |
+| System monitor |  CPU, memory, disk graphs |  `ocws-sysmon` | Done |
+| Wallpaper management |  Transitions, automation |  `ocws-wallpaper` | Done |
+| Theme engine |  Builtin + community |  INI-based theme engine | Done |
+| Animations |  CSS transitions | ️ Basic GTK3 transitions | Partial |
+| Glassmorphism |  Blur, translucency | ️ CSS-only (no real blur) | Partial |
 
 ### 1.3 Critical Gaps to Close
 
@@ -221,14 +221,14 @@ Single script: `ocws-shell` with modes:
 
 | Test | Crystal-Dock | Noctalia | OCWS |
 |------|--------------|----------|------|
-| Launch app from dock | ✅ | N/A | ✅ |
-| Magnification effect | ✅ | N/A | ⚠️ |
-| Running app indicator | ✅ | N/A | ✅ |
-| Control center toggle | N/A | ✅ | ✅ |
-| Notification display | N/A | ✅ | ✅ |
-| OSD popup | N/A | ✅ | ✅ |
-| Desktop widget | N/A | ✅ | ❌ |
-| Animation smoothness | ✅ | ✅ | ⚠️ |
+| Launch app from dock |  | N/A |  |
+| Magnification effect |  | N/A | ️ |
+| Running app indicator |  | N/A |  |
+| Control center toggle | N/A |  |  |
+| Notification display | N/A |  |  |
+| OSD popup | N/A |  |  |
+| Desktop widget | N/A |  |  |
+| Animation smoothness |  |  | ️ |
 
 ### 7.2 Performance Benchmarks
 

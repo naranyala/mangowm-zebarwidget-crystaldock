@@ -83,19 +83,19 @@ Ayu, Catppuccin, Dracula, Eldritch, Gruvbox, Kanagawa, Noctalia, Nord, Rosé Pin
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| 65+ widgets | ✓ | CPU, memory, disk, network, battery, etc. |
-| Dual-panel layout | ✓ | Top bar + bottom bar |
-| Dock widget | ✓ | Basic (no magnification) |
-| Clipboard history | ✓ | Via wl-paste/cliphist |
-| Media player controls | ✓ | MPRIS integration |
-| System tray | ✓ | StatusNotifierItem |
-| Workspace switcher | ✓ | wlr-workspaces |
-| Calendar popup | ✓ | clock.widget |
-| Quick settings | ✓ | quick-settings.widget |
-| Control center | ✓ | ocws-control-center.widget |
-| Notification center | ✓ | notification-center.widget |
-| Weather widget | ✓ | Open-Meteo |
-| Desktop widgets | ✓ | Clock, sysmon, weather |
+| 65+ widgets |  | CPU, memory, disk, network, battery, etc. |
+| Dual-panel layout |  | Top bar + bottom bar |
+| Dock widget |  | Basic (no magnification) |
+| Clipboard history |  | Via wl-paste/cliphist |
+| Media player controls |  | MPRIS integration |
+| System tray |  | StatusNotifierItem |
+| Workspace switcher |  | wlr-workspaces |
+| Calendar popup |  | clock.widget |
+| Quick settings |  | quick-settings.widget |
+| Control center |  | ocws-control-center.widget |
+| Notification center |  | notification-center.widget |
+| Weather widget |  | Open-Meteo |
+| Desktop widgets |  | Clock, sysmon, weather |
 
 ---
 
@@ -118,19 +118,19 @@ If removing all three shells, these external tools would be needed:
 
 | Category | DMS | Noctalia | Crystal Dock | OCWS Native |
 |----------|-----|----------|--------------|-------------|
-| Dynamic theming | ✓ matugen | ✓ wallpaper-based | ✗ | ✗ |
-| Lock screen | ✓ full | ✓ basic | ✗ | ✗ |
-| Notifications | ✓ daemon | ✓ daemon | ✗ | ✓ widget |
-| Wallpaper transitions | ✗ | ✓ 6 effects | ✗ | ✗ |
-| Night light | ✓ toggle | ✓ built-in | ✗ | ✗ |
-| Idle management | ✗ | ✓ built-in | ✗ | ✗ |
-| Dock magnification | ✗ | ✓ | ✓ zoom | ✗ |
-| Bouncing icons | ✗ | ✗ | ✓ | ✗ |
-| Capsule bar mode | ✗ | ✓ | ✗ | ✗ |
-| Hooks system | ✗ | ✓ | ✗ | ✗ |
-| Control center | ✓ | ✓ | ✗ | ✓ |
-| System monitor | ✓ | ✓ | ✗ | ✓ |
-| Weather | ✓ | ✓ | ✗ | ✓ |
+| Dynamic theming |  matugen |  wallpaper-based |  |  |
+| Lock screen |  full |  basic |  |  |
+| Notifications |  daemon |  daemon |  |  widget |
+| Wallpaper transitions |  |  6 effects |  |  |
+| Night light |  toggle |  built-in |  |  |
+| Idle management |  |  built-in |  |  |
+| Dock magnification |  |  |  zoom |  |
+| Bouncing icons |  |  |  |  |
+| Capsule bar mode |  |  |  |  |
+| Hooks system |  |  |  |  |
+| Control center |  |  |  |  |
+| System monitor |  |  |  |  |
+| Weather |  |  |  |  |
 
 ---
 
