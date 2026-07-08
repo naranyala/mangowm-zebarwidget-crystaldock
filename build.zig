@@ -82,10 +82,10 @@ pub fn build(b: *std.Build) void {
         b.installArtifact(exe);
     }
 
-    // ocws-kv: links ocws-kv.c library + CLI
+    // ocws-datetime: GTK3 floating analog clock + datetime widget
     {
         const exe = b.addExecutable(.{
-            .name = "ocws-kv",
+            .name = "ocws-datetime",
             .root_module = b.createModule(.{
                 .target = target,
                 .optimize = optimize,
@@ -94,58 +94,59 @@ pub fn build(b: *std.Build) void {
         });
 
         exe.root_module.addCSourceFile(.{
-            .file = b.path("src/core/ocws-kv.c"),
-            .flags = c_flags,
-        });
-        exe.root_module.addCSourceFile(.{
-            .file = b.path("src/cli/ocws-kv-cli.c"),
+            .file = b.path("src/cli/ocws-datetime.c"),
             .flags = c_flags,
         });
 
-        b.installArtifact(exe);
-    }
-
-    // ocws-fonts: links ocws-fonts.c library + CLI
-    {
-        const exe = b.addExecutable(.{
-            .name = "ocws-fonts",
-            .root_module = b.createModule(.{
-                .target = target,
-                .optimize = optimize,
-                .link_libc = true,
-            }),
-        });
-
-        exe.root_module.addCSourceFile(.{
-            .file = b.path("src/core/ocws-fonts.c"),
-            .flags = c_flags,
-        });
-        exe.root_module.addCSourceFile(.{
-            .file = b.path("src/cli/ocws-fonts-cli.c"),
-            .flags = c_flags,
-        });
-
-        b.installArtifact(exe);
-    }
-
-    // ocws-color: needs cairo
-    {
-        const exe = b.addExecutable(.{
-            .name = "ocws-color",
-            .root_module = b.createModule(.{
-                .target = target,
-                .optimize = optimize,
-                .link_libc = true,
-            }),
-        });
-
-        exe.root_module.addCSourceFile(.{
-            .file = b.path("src/cli/ocws-color.c"),
-            .flags = c_flags,
-        });
-
+        exe.root_module.linkSystemLibrary("gtk+-3.0", .{});
+        exe.root_module.linkSystemLibrary("glib-2.0", .{});
+        exe.root_module.linkSystemLibrary("gio-2.0", .{});
         exe.root_module.linkSystemLibrary("cairo", .{});
-        exe.root_module.linkSystemLibrary("m", .{});
+        b.installArtifact(exe);
+    }
+
+    // ocws-snake-game: GTK3 + Cairo snake game
+    {
+        const exe = b.addExecutable(.{
+            .name = "ocws-snake-game",
+            .root_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+                .link_libc = true,
+            }),
+        });
+
+        exe.root_module.addCSourceFile(.{
+            .file = b.path("src/cli/ocws-snake-game.c"),
+            .flags = c_flags,
+        });
+
+        exe.root_module.linkSystemLibrary("gtk+-3.0", .{});
+        exe.root_module.linkSystemLibrary("glib-2.0", .{});
+        exe.root_module.linkSystemLibrary("gio-2.0", .{});
+        exe.root_module.linkSystemLibrary("cairo", .{});
+        b.installArtifact(exe);
+    }
+
+    // ocws-todomvc: pure GTK3 todo list (TodoMVC)
+    {
+        const exe = b.addExecutable(.{
+            .name = "ocws-todomvc",
+            .root_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+                .link_libc = true,
+            }),
+        });
+
+        exe.root_module.addCSourceFile(.{
+            .file = b.path("src/cli/ocws-todomvc.c"),
+            .flags = c_flags,
+        });
+
+        exe.root_module.linkSystemLibrary("gtk+-3.0", .{});
+        exe.root_module.linkSystemLibrary("glib-2.0", .{});
+        exe.root_module.linkSystemLibrary("gio-2.0", .{});
         b.installArtifact(exe);
     }
 
@@ -230,6 +231,8 @@ pub fn build(b: *std.Build) void {
         exe.root_module.linkSystemLibrary("cairo", .{});
         b.installArtifact(exe);
     }
+
+
 
     // ocws-live-bg: GTK Layer Shell Live Background
     {

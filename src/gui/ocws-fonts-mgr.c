@@ -913,12 +913,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_pack_start(GTK_BOX(hbox), stack, TRUE, TRUE, 0);
 
     /* ============================================================
-     * Tab 1: System Fonts (split: tree left, preview right)
+     * Tab 1: System Fonts (fixed split: tree left, preview right)
      * ============================================================ */
-    GtkWidget *sys_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_container_set_border_width(GTK_CONTAINER(sys_paned), 5);
+    GtkWidget *sys_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(sys_hbox), 5);
 
-    /* --- Left: font list --- */
+    /* --- Left: font list (fixed width) --- */
     GtkWidget *sys_left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_size_request(sys_left, 500, -1);
 
@@ -960,10 +960,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
         gtk_tree_view_append_column(g_treeview, column);
     }
 
-    /* Connect row-activated (double-click) for preview */
     g_signal_connect(g_treeview, "row-activated", G_CALLBACK(on_font_row_activated), NULL);
 
-    /* Connect selection change for live preview */
     GtkTreeSelection *font_sel = gtk_tree_view_get_selection(g_treeview);
     g_signal_connect(font_sel, "changed", G_CALLBACK(on_font_selection_changed), NULL);
 
@@ -972,9 +970,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_container_add(GTK_CONTAINER(scrolled_tree), GTK_WIDGET(g_treeview));
     gtk_box_pack_start(GTK_BOX(sys_left), scrolled_tree, TRUE, TRUE, 0);
 
-    gtk_paned_pack1(GTK_PANED(sys_paned), sys_left, TRUE, TRUE);
+    gtk_box_pack_start(GTK_BOX(sys_hbox), sys_left, FALSE, FALSE, 0);
 
-    /* --- Right: font preview panel --- */
+    /* Separator */
+    gtk_box_pack_start(GTK_BOX(sys_hbox), gtk_separator_new(GTK_ORIENTATION_VERTICAL), FALSE, FALSE, 0);
+
+    /* --- Right: font preview panel (expands) --- */
     GtkWidget *sys_right_scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sys_right_scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
@@ -1147,9 +1148,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_pack_start(GTK_BOX(g_preview_box), preview_spacer, TRUE, TRUE, 0);
 
     gtk_container_add(GTK_CONTAINER(sys_right_scroll), g_preview_box);
-    gtk_paned_pack2(GTK_PANED(sys_paned), sys_right_scroll, TRUE, TRUE);
+    gtk_box_pack_start(GTK_BOX(sys_hbox), sys_right_scroll, TRUE, TRUE, 0);
 
-    gtk_stack_add_titled(GTK_STACK(stack), sys_paned, "system_fonts", "System Fonts");
+    gtk_stack_add_titled(GTK_STACK(stack), sys_hbox, "system_fonts", "System Fonts");
 
     /* ============================================================
      * Tab 2: Online Installer
