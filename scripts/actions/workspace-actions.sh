@@ -173,7 +173,9 @@ execute_action() {
             xdg-open ~ 2>/dev/null || nautilus ~ 2>/dev/null || dolphin ~ 2>/dev/null
             ;;
         term|terminal|shell|bash)
-            if command -v foot >/dev/null; then
+            if command -v contour >/dev/null; then
+                contour &
+            elif command -v foot >/dev/null; then
                 foot &
             elif command -v kitty >/dev/null; then
                 kitty &

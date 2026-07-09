@@ -11,13 +11,14 @@
 @define-color accent {{COLOR_ACCENT}};
 @define-color urgent {{COLOR_URGENT}};
 @define-color success {{COLOR_OK}};
+@define-color widget_alpha 1.0;
 
 /* ============================================================
  * Base — regular full-width panel
  * ============================================================ */
 
 window#topbar, window#bottombar {
-  background-color: alpha({{COLOR_BG}}, 0.92);
+  background-color: {{COLOR_BG}};
   box-shadow: none;
   min-height: 36px;
 }
@@ -27,21 +28,21 @@ grid#layout, grid#topbar {
   border-radius: 0px;
   margin: 0px;
   padding: 0px 8px;
-  border-bottom: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-bottom: 1px solid {{COLOR_BORDER}};
 }
 
 grid#bottombar {
-  background-color: alpha({{COLOR_BG}}, 0.85);
+  background-color: {{COLOR_BG}};
   border-radius: 0px;
   margin: 0px;
   padding: 0px 8px;
-  border-top: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-top: 1px solid {{COLOR_BORDER}};
 }
 
 * {
   background-color: transparent;
   color: {{COLOR_FG}};
-  font-family: 'FiraCode Nerd Font', 'Noto Sans', 'DejaVu Sans', sans-serif;
+  font-family: {{MODULE_FONT_FAMILY}};
 }
 
 /* ============================================================
@@ -59,9 +60,9 @@ button, button image {
 }
 
 window#switcher {
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   color: {{COLOR_FG}};
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   border-radius: 10px;
   padding: 40px;
   -GtkWidget-hexpand: true;
@@ -72,8 +73,8 @@ grid#switcher_item label {
 }
 
 label {
-  font-family: 'FiraCode Nerd Font', 'Noto Sans', 'DejaVu Sans', sans-serif;
-  font-size: 12px;
+  font-family: {{MODULE_FONT_FAMILY}};
+  font-size: {{FONT_SIZE}};
   color: {{COLOR_FG}};
   background-color: transparent;
 }
@@ -92,11 +93,11 @@ image {
 }
 
 .module:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 .focused {
-  background-color: alpha({{COLOR_ACCENT}}, 0.2);
+  background-color: {{COLOR_ACCENT}};
 }
 
 .urgent label {
@@ -117,11 +118,11 @@ button.module {
 }
 
 button.module:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button.module:active {
-  background-color: alpha({{COLOR_SURFACE}}, 0.7);
+  background-color: {{COLOR_SURFACE}};
 }
 
 /* ============================================================
@@ -129,7 +130,7 @@ button.module:active {
  * ============================================================ */
 
 label#clock {
-  font-size: 13px;
+  font-size: {{FONT_SIZE_LARGE}};
   font-weight: bold;
   padding: 4px 12px;
   -GtkWidget-vexpand: true;
@@ -143,7 +144,7 @@ label#clock {
 
 grid#pager {
   border-radius: 6px;
-  border-color: alpha({{COLOR_BORDER}}, 0.3);
+  border-color: {{COLOR_BORDER}};
   border-style: solid;
   border-width: 1px;
   margin: 4px;
@@ -163,7 +164,7 @@ button#pager_item {
 }
 
 button#pager_item label {
-  font-size: 11px;
+  font-size: {{FONT_SIZE_SMALL}};
   color: {{COLOR_BORDER}};
 }
 
@@ -173,11 +174,11 @@ button#pager_item.active label {
 }
 
 button#pager_item.occupied label {
-  color: alpha({{COLOR_FG}}, 0.6);
+  color: {{COLOR_FG}};
 }
 
 button#pager_item:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 /* ============================================================
@@ -194,16 +195,16 @@ button.taskbar_item {
 }
 
 button.taskbar_item:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button.taskbar_item.focused {
-  background-color: alpha({{COLOR_ACCENT}}, 0.2);
+  background-color: {{COLOR_ACCENT}};
   border-bottom: 2px solid {{COLOR_ACCENT}};
 }
 
 button.taskbar_item.urgent {
-  background-color: alpha({{COLOR_URGENT}}, 0.2);
+  background-color: {{COLOR_URGENT}};
 }
 
 /* ============================================================
@@ -219,34 +220,34 @@ grid.detail_grid {
   margin: 5px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  border: 1px solid {{COLOR_BORDER}};
+  background-color: {{COLOR_BG}};
   -GtkWidget-direction: bottom;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 label.detail_header {
-  font-size: 13px;
+  font-size: {{FONT_SIZE_LARGE}};
   font-weight: bold;
   color: {{COLOR_ACCENT}};
   padding-bottom: 8px;
-  border-bottom: 1px solid alpha({{COLOR_SURFACE}}, 0.6);
+  border-bottom: 1px solid {{COLOR_SURFACE}};
   -GtkWidget-hexpand: true;
 }
 
 label.detail_value {
   font-family: 'Noto Sans Mono', monospace;
-  font-size: 12px;
+  font-size: {{FONT_SIZE}};
   color: {{COLOR_FG}};
   padding: 8px 0px;
   -GtkWidget-hexpand: true;
 }
 
 label.detail_hint {
-  font-size: 10px;
-  color: alpha({{COLOR_FG}}, 0.6);
+  font-size: {{FONT_SIZE_SMALL}};
+  color: {{COLOR_FG}};
   padding-top: 6px;
-  border-top: 1px solid alpha({{COLOR_SURFACE}}, 0.6);
+  border-top: 1px solid {{COLOR_SURFACE}};
   -GtkWidget-hexpand: true;
 }
 
@@ -258,14 +259,14 @@ grid.detail_button_row {
 grid.detail_button_row button {
   padding: 4px 8px;
   margin: 2px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   border-radius: 6px;
-  background-color: alpha({{COLOR_SURFACE}}, 0.3);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
 grid.detail_button_row button:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
   border-color: {{COLOR_ACCENT}};
 }
 
@@ -277,8 +278,8 @@ scale.detail_slider {
 progressbar.detail_progress trough {
   min-height: 6px;
   border-radius: 3px;
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  background-color: {{COLOR_SURFACE}};
+  border: 1px solid {{COLOR_BORDER}};
 }
 
 progressbar.detail_progress progress {
@@ -324,9 +325,9 @@ grid#SessionPopup {
   -GtkWidget-hexpand: true;
   margin: 5px;
   border-radius: 10px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   padding: 10px;
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -345,13 +346,13 @@ button.ws_button {
   border-radius: 6px;
   padding: 4px;
   margin: 2px;
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
-  color: alpha({{COLOR_FG}}, 0.6);
-  font-size: 11px;
+  background-color: {{COLOR_SURFACE}};
+  color: {{COLOR_FG}};
+  font-size: {{FONT_SIZE_SMALL}};
 }
 
 button.ws_button:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.6);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
@@ -360,16 +361,16 @@ button.ws_button:hover {
  * ============================================================ */
 
 tooltip {
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   color: {{COLOR_FG}};
   border-radius: 6px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   padding: 6px 10px;
 }
 
 tooltip label {
   color: {{COLOR_FG}};
-  font-size: 11px;
+  font-size: {{FONT_SIZE_SMALL}};
 }
 
 /* ============================================================

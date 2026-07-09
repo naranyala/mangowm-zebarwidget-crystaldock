@@ -116,7 +116,7 @@ grid.cc_row {
 label.cc_icon {
   font-size: 18px;
   min-width: 32px;
-  color: #cdd6f4;
+  color: @theme_text_color;
 }
 
 scale.detail_slider {
@@ -131,7 +131,7 @@ grid.cc_toggles {
 }
 
 button.cc_toggle {
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: alpha(@surface2, 0.4);
   border-radius: 12px;
   padding: 12px;
   margin: 4px;
@@ -140,19 +140,19 @@ button.cc_toggle {
 button.cc_toggle:hover { background-color: rgba(69, 71, 90, 0.7); }
 
 button.cc_toggle_active {
-  background-color: rgba(137, 180, 250, 0.25);
-  color: #89b4fa;
+  background-color: alpha(@accent, 0.25);
+  color: @accent;
   border-radius: 12px;
   padding: 12px;
   margin: 4px;
   font-weight: bold;
   border: 1px solid rgba(137, 180, 250, 0.3);
 }
-button.cc_toggle_active:hover { background-color: rgba(137, 180, 250, 0.4); }
+button.cc_toggle_active:hover { background-color: alpha(@accent, 0.4); }
 
 button.cc_toggle_active_red {
   background-color: rgba(243, 139, 168, 0.25);
-  color: #f38ba8;
+  color: @urgent;
   border-radius: 12px;
   padding: 12px;
   margin: 4px;

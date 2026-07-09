@@ -75,4 +75,4 @@ PopUp("MemMonitorPopup") {
 }
 
 #CSS
-progressbar#mem_prog progress { background-color: #cba6f7; }
+progressbar#mem_prog progress { background-color: @accent; }

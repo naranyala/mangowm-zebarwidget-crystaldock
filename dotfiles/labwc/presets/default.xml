@@ -37,7 +37,7 @@
     <keybind key="S-m"><action name="Exit"/></keybind>
 
     <!-- Launchers -->
-    <keybind key="A-Return"><action name="Execute"><command>foot</command></action></keybind>
+    <keybind key="A-Return"><action name="Execute"><command>contour</command></action></keybind>
     <keybind key="A-d"><action name="Execute"><command>rofi -show drun</command></action></keybind>
 
     <!-- Window management -->
@@ -147,7 +147,7 @@
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightnessctl set 10%-</command></action></keybind>
 
     <!-- Window Management Extras -->
-    <keybind key="S-Return"><action name="Execute"><command>foot</command></action></keybind>
+    <keybind key="S-Return"><action name="Execute"><command>contour</command></action></keybind>
     <keybind key="A-BackSpace"><action name="Execute"><command>rofi -show window -theme-str 'window {width: 500px;}'</command></action></keybind>
 
     <!-- Theme Switcher -->
@@ -199,7 +199,7 @@
 
   <menu id="root-menu" label="Root Menu">
     <item label="Terminal">
-      <action name="Execute"><command>foot</command></action>
+      <action name="Execute"><command>contour</command></action>
     </item>
     <item label="Rofi Launcher">
       <action name="Execute"><command>rofi -show drun</command></action>

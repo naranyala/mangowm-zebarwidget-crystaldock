@@ -33,6 +33,6 @@ label.keybinds_list {
   font-family: monospace;
   font-size: 11px;
   -GtkWidget-halign: start;
-  color: #cdd6f4;
+  color: @theme_text_color;
   padding: 10px;
 }

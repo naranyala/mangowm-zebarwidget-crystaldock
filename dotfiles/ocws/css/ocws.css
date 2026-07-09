@@ -4,15 +4,15 @@
  * ============================================================ */
 
 /* --- Phase 1: Global Shell Tokens (Glassmorphism & Floating) --- */
-@define-color shell_bg alpha(@ocws_bg, 0.92);
-@define-color shell_bg_translucent alpha(@ocws_bg, 0.65);
-@define-color shell_bg_hover alpha(@ocws_surface1, 0.5);
-@define-color shell_bg_active alpha(@ocws_accent, 0.2);
-@define-color shell_border alpha(@ocws_fg, 0.1);
+@define-color shell_bg @ocws_bg;
+@define-color shell_bg_translucent @ocws_bg;
+@define-color shell_bg_hover @ocws_surface1;
+@define-color shell_bg_active @ocws_accent;
+@define-color shell_border @ocws_fg;
 @define-color text_primary @ocws_fg;
 @define-color text_muted @ocws_muted;
 @define-color accent @ocws_accent;
-@define-color urgent_bg alpha(@ocws_urgent, 0.2);
+@define-color urgent_bg @ocws_urgent;
 @define-color shadow rgba(0, 0, 0, 0.4);
 
 /* --- Top and Bottom Bars --- */
@@ -88,7 +88,7 @@ button.taskbar_item {
   padding: 2px 12px;
   margin: 4px;
   border-radius: 12px;
-  background-color: rgba(49, 50, 68, 0.75);
+  background-color: @theme_bg_color;
   border: 1px solid @shell_border;
   box-shadow: 0 4px 16px @shadow;
   color: @text_muted;
@@ -97,20 +97,20 @@ button.taskbar_item {
   -GtkWidget-valign: center;
 }
 button.taskbar_item:hover {
-  background-color: rgba(69, 71, 90, 0.85);
+  background-color: @surface2;
   color: @text_primary;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 button.taskbar_item.focused {
-  background-color: alpha(@ocws_accent, 0.25);
+  background-color: @ocws_accent;
   color: @text_primary;
   border-bottom: 2px solid @accent;
-  box-shadow: 0 4px 16px alpha(@ocws_accent, 0.15);
+  box-shadow: 0 4px 16px @ocws_accent;
 }
 button.taskbar_item.urgent {
   background-color: @urgent_bg;
   color: @ocws_urgent;
-  box-shadow: 0 4px 16px alpha(@ocws_urgent, 0.15);
+  box-shadow: 0 4px 16px @ocws_urgent;
 }
 button.taskbar_item image {
   min-height: 28px;
@@ -128,7 +128,7 @@ button.taskbar_item label {
 button.module {
   padding: 0px 10px;
   border-radius: 18px;
-  background-color: rgba(49, 50, 68, 0.85);
+  background-color: @theme_bg_color;
   border: 1px solid @shell_border;
   box-shadow: 0 4px 16px @shadow;
   color: @text_primary;
@@ -139,7 +139,7 @@ button.module {
   -GtkWidget-valign: center;
 }
 button.module:hover {
-  background-color: rgba(69, 71, 90, 0.9);
+  background-color: @surface2;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 button.module:active {
@@ -152,7 +152,7 @@ button.module_pill {
   padding: 0px 10px;
   margin: 4px 2px;
   border-radius: 18px;
-  background-color: rgba(49, 50, 68, 0.85);
+  background-color: @theme_bg_color;
   border: 1px solid @shell_border;
   box-shadow: 0 4px 16px @shadow;
   color: @text_muted;
@@ -163,7 +163,7 @@ button.module_pill {
   -GtkWidget-valign: center;
 }
 button.module_pill:hover {
-  background-color: rgba(69, 71, 90, 0.9);
+  background-color: @surface2;
   color: @text_primary;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
@@ -177,7 +177,7 @@ button.text_widget {
   padding: 2px 10px;
   margin: 4px 2px;
   border-radius: 12px;
-  background-color: rgba(49, 50, 68, 0.75);
+  background-color: @theme_bg_color;
   border: 1px solid @shell_border;
   box-shadow: 0 4px 16px @shadow;
   color: @text_muted;
@@ -188,7 +188,7 @@ button.text_widget {
   -GtkWidget-valign: center;
 }
 button.text_widget:hover {
-  background-color: rgba(69, 71, 90, 0.85);
+  background-color: @surface2;
   color: @text_primary;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
@@ -217,7 +217,7 @@ button.text_clock {
   -GtkWidget-valign: center;
 }
 button.text_clock:hover {
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: @surface2;
 }
 
 button.text_media {
@@ -233,7 +233,7 @@ button.text_media {
   -GtkWidget-valign: center;
 }
 button.text_media:hover {
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: @surface2;
   color: @text_primary;
 }
 
@@ -251,7 +251,7 @@ button.text_metric {
   -GtkWidget-valign: center;
 }
 button.text_metric:hover {
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: @surface2;
   color: @text_primary;
 }
 
@@ -264,7 +264,7 @@ button.text_urgent {
   color: @ocws_urgent;
 }
 button.text_urgent:hover {
-  background-color: alpha(@ocws_urgent, 0.15);
+  background-color: @ocws_urgent;
 }
 
 /* --- Clock --- */
@@ -302,7 +302,7 @@ grid.detail_grid {
   padding: 16px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background-color: rgba(30, 30, 46, 0.95);
+  background-color: @theme_bg_color;
   -GtkWidget-direction: bottom;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }

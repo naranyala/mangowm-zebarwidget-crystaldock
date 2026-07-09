@@ -26,7 +26,7 @@ menu.items.text.color: #cdd6f4
 menu.items.active.bg.color: #313244
 menu.items.active.text.color: #cdd6f4
 menu.title.bg.color: #89b4fa
-menu.title.text.color: #cdd6f4
+menu.title.text.color: #1e1e2e
 menu.border.color: #45475a
 
 # OSD / Window Switcher (Alt+Tab)
@@ -52,6 +52,8 @@ osd.workspace-switcher.boxes.height: 24
 osd.workspace-switcher.boxes.border.width: 2
 osd.workspace-switcher.boxes.bg.color: #1e1e2e
 osd.workspace-switcher.boxes.border.color: #45475a
+osd.workspace-switcher.boxes.active.bg.color: #89b4fa
+osd.workspace-switcher.boxes.active.border.color: #89b4fa
 osd.workspace-switcher.label.text.color: #cdd6f4
 
 # Window button colors

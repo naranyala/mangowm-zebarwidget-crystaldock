@@ -34,10 +34,12 @@ echo ""
 
 # --- 2. Terminal ---
 echo "[2/5] Terminal"
-if command -v foot &>/dev/null; then
+if command -v contour &>/dev/null; then
+    pass "contour: $(which contour)"
+elif command -v foot &>/dev/null; then
     pass "foot: $(which foot)"
 else
-    fail "foot not found"
+    fail "contour/foot not found"
 fi
 echo ""
 

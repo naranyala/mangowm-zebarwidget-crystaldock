@@ -89,5 +89,5 @@ chart#cpu_history {
   -GtkWidget-vexpand: true;
   margin: 2px;
   border: 1px solid @theme_fg_color;
-  color: #89b4fa;
+  color: @accent;
 }

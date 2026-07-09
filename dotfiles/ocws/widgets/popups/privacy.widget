@@ -14,7 +14,7 @@ Private {
       class = "module";
       trigger = "pipewire";
       tooltip = "Microphone in use";
-      css = "* { color: #f38ba8; }";
+      css = "* { color: @urgent; }";
     }
     button {
       value = video_icon;
@@ -22,7 +22,7 @@ Private {
       class = "module";
       trigger = "pipewire";
       tooltip = "Camera in use";
-      css = "* { color: #f38ba8; }";
+      css = "* { color: @urgent; }";
     }
   }
 }

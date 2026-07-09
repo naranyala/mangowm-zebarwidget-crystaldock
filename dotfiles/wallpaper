@@ -116,6 +116,55 @@ set_wallpaper() {
         echo "Error: No supported wallpaper setter found (try installing swaybg)."
         return 1
     fi
+
+    # Trigger dynamic adaptive color palette based on wallpaper (if enabled)
+    local project_dir
+    project_dir="$(cd "$_script_dir/.." && pwd)"
+    local current_theme=""
+    if [[ -f "$HOME/.config/labwc/.current-theme" ]]; then
+        current_theme=$(cat "$HOME/.config/labwc/.current-theme")
+    fi
+
+    if [[ "$current_theme" == "wallpaper-auto" ]]; then
+        if [[ -x "$project_dir/scripts/wallpaper-theme.sh" && -x "$project_dir/scripts/theme-engine.sh" ]]; then
+            echo "Generating adaptive color palette..."
+            "$project_dir/scripts/wallpaper-theme.sh" "$img"
+            
+            local theme_file="$project_dir/themes/wallpaper-auto.ini"
+            if [[ -f "$theme_file" ]]; then
+                echo "Applying adaptive theme..."
+                "$project_dir/scripts/theme-engine.sh" apply "$theme_file"
+                
+                # Reload UI components to reflect new theme
+                command -v labwc >/dev/null 2>&1 && labwc -r 2>/dev/null || true
+                pkill -USR1 sfwbar 2>/dev/null || true
+                command -v makoctl >/dev/null 2>&1 && makoctl reload 2>/dev/null || true
+                if pidof crystal-dock >/dev/null; then killall crystal-dock; sleep 0.1; crystal-dock & disown; fi
+                
+                # Update DankMaterialShell adaptive palette
+                if pgrep -x dms >/dev/null; then
+                    command -v dms >/dev/null 2>&1 && dms matugen queue --value "$img" --wait=false 2>/dev/null || true
+                fi
+                
+                # Update Noctalia Shell adaptive palette
+                if command -v noctalia >/dev/null 2>&1; then
+                    mkdir -p ~/.config/noctalia
+                    noctalia theme "$img" -o ~/.config/noctalia/theme.json 2>/dev/null || true
+                    # If noctalia is running, notify it to reload (by touching config)
+                    pgrep -x noctalia >/dev/null && touch ~/.config/noctalia/config.toml
+                fi
+                
+                # Show notification popup with the new palette
+                if command -v notify-send >/dev/null 2>&1; then
+                    local t_bg=$(grep -m1 '^bg =' "$theme_file" | cut -d= -f2 | xargs)
+                    local t_accent=$(grep -m1 '^accent =' "$theme_file" | cut -d= -f2 | xargs)
+                    notify-send -a "Theme Engine" -i "$img" -t 5000 \
+                        "Adaptive Palette Applied" \
+                        "<b>Wallpaper:</b> $(basename "$img")\n<b>Background:</b> $t_bg\n<b>Accent:</b> $t_accent"
+                fi
+            fi
+        fi
+    fi
 }
 
 # --- Main Logic ---

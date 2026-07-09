@@ -7,62 +7,62 @@
  * ============================================================ */
 
 /* === Base Colors === */
-@define-color ocws_bg #1e1e2e;
-@define-color ocws_fg #cdd6f4;
+@define-color ocws_bg @theme_bg_color;
+@define-color ocws_fg @theme_text_color;
 @define-color ocws_mantle #181825;
 @define-color ocws_crust #11111b;
 
 /* === Surface Colors === */
 @define-color ocws_surface0 #313244;
-@define-color ocws_surface1 #1e1e2e;
+@define-color ocws_surface1 @theme_bg_color;
 @define-color ocws_surface2 #45475a;
 
 /* === Overlay Colors === */
-@define-color ocws_overlay0 #6c7086;
+@define-color ocws_overlay0 @theme_text_color;
 @define-color ocws_overlay1 #7f849c;
 @define-color ocws_overlay2 #9399b2;
 
 /* === Text Colors === */
-@define-color ocws_subtext0 #a6adc8;
+@define-color ocws_subtext0 @theme_text_color;
 @define-color ocws_subtext1 #bac2de;
-@define-color ocws_text #cdd6f4;
+@define-color ocws_text @theme_text_color;
 
 /* === Accent Colors === */
-@define-color ocws_blue #89b4fa;
+@define-color ocws_blue @accent;
 @define-color ocws_sapphire #74c7ec;
 @define-color ocws_sky #89dceb;
 @define-color ocws_teal #94e2d5;
-@define-color ocws_green #a6e3a1;
+@define-color ocws_green @success;
 @define-color ocws_yellow #f9e2af;
-@define-color ocws_peach #fab387;
+@define-color ocws_peach @accent;
 @define-color ocws_maroon #eba0ac;
-@define-color ocws_red #f38ba8;
-@define-color ocws_mauve #cba6f7;
+@define-color ocws_red @urgent;
+@define-color ocws_mauve @accent;
 @define-color ocws_pink #f5c2e7;
 @define-color ocws_flamingo #f2cdcd;
 @define-color ocws_rosewater #f5e0dc;
 @define-color ocws_lavender #b4befe;
 
 /* === Semantic Aliases === */
-@define-color ocws_accent #89b4fa;
-@define-color ocws_urgent #f38ba8;
+@define-color ocws_accent @accent;
+@define-color ocws_urgent @urgent;
 @define-color ocws_warning #f9e2af;
-@define-color ocws_ok #a6e3a1;
+@define-color ocws_ok @success;
 @define-color ocws_info #89dceb;
-@define-color ocws_muted #a6adc8;
+@define-color ocws_muted @theme_text_color;
 
 /* === Derived / Alpha Variants === */
-@define-color ocws_surface0_alpha50 alpha(#313244, 0.5);
-@define-color ocws_surface1_alpha30 alpha(#1e1e2e, 0.3);
-@define-color ocws_surface1_alpha50 alpha(#1e1e2e, 0.5);
-@define-color ocws_surface2_alpha30 alpha(#45475a, 0.3);
-@define-color ocws_bg_alpha85 alpha(#1e1e2e, 0.85);
-@define-color ocws_bg_alpha92 alpha(#1e1e2e, 0.92);
-@define-color ocws_bg_alpha95 alpha(#1e1e2e, 0.95);
-@define-color ocws_fg_alpha30 alpha(#cdd6f4, 0.3);
-@define-color ocws_fg_alpha50 alpha(#cdd6f4, 0.5);
-@define-color ocws_fg_alpha60 alpha(#cdd6f4, 0.6);
-@define-color ocws_accent_alpha15 alpha(#89b4fa, 0.15);
-@define-color ocws_accent_alpha20 alpha(#89b4fa, 0.2);
-@define-color ocws_urgent_alpha15 alpha(#f38ba8, 0.15);
-@define-color ocws_urgent_alpha20 alpha(#f38ba8, 0.2);
+@define-color ocws_surface0_alpha50 #313244;
+@define-color ocws_surface1_alpha30 @theme_bg_color;
+@define-color ocws_surface1_alpha50 @theme_bg_color;
+@define-color ocws_surface2_alpha30 #45475a;
+@define-color ocws_bg_alpha85 @theme_bg_color;
+@define-color ocws_bg_alpha92 @theme_bg_color;
+@define-color ocws_bg_alpha95 @theme_bg_color;
+@define-color ocws_fg_alpha30 @theme_text_color;
+@define-color ocws_fg_alpha50 @theme_text_color;
+@define-color ocws_fg_alpha60 @theme_text_color;
+@define-color ocws_accent_alpha15 @accent;
+@define-color ocws_accent_alpha20 @accent;
+@define-color ocws_urgent_alpha15 @urgent;
+@define-color ocws_urgent_alpha20 @urgent;

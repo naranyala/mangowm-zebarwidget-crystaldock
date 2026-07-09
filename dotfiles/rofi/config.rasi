@@ -10,19 +10,19 @@ configuration {
     display-run: " Run";
     display-window: " Windows";
     drun-display-format: "{name}";
-    terminal: "foot";
+    terminal: "contour";
     fuzzy: true;
 }
 
 * {
-    bg:         #1e1e2e;
-    bg-alt:     #313244;
-    fg:         #cdd6f4;
-    fg-alt:     #a6adc8;
-    accent:     #89b4fa;
-    urgent:     #f38ba8;
-    error:      #f38ba8;
-    selected:   #45475a;
+    bg:         ${base};
+    bg-alt:     ${surface0};
+    fg:         ${text};
+    fg-alt:     ${subtext0};
+    accent:     ${blue};
+    urgent:     ${red};
+    error:      ;
+    selected:   ${surface1};
 
     background-color: transparent;
     text-color:       @fg;

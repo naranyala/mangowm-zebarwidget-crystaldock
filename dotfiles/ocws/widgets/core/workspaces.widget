@@ -47,12 +47,12 @@ button.ws_button {
   border-radius: 6px;
   padding: 4px;
   margin: 2px;
-  background-color: rgba(69, 71, 90, 0.4);
-  color: #a6adc8;
+  background-color: alpha(@surface2, 0.4);
+  color: alpha(@theme_text_color, 0.7);
   font-size: 11px;
 }
 
 button.ws_button:hover {
   background-color: rgba(69, 71, 90, 0.6);
-  color: #cdd6f4;
+  color: @theme_text_color;
 }

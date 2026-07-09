@@ -91,6 +91,16 @@ apply_theme() {
     pass "sfwbar restarted"
   fi
 
+  # Restart crystal-dock
+  if pidof crystal-dock &>/dev/null; then
+    killall crystal-dock 2>/dev/null
+    sleep 0.3
+    crystal-dock &>/dev/null &
+    disown
+    pass "crystal-dock restarted"
+  fi
+
+  echo "$name" > "$CURRENT_FILE"
   echo ""
   echo -e "${GREEN}${BOLD}Theme applied: $name${NC}"
 }

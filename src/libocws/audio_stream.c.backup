@@ -1,0 +1,262 @@
+// ocws audio_stream — PulseAudio active-stream detection +
+// native PipeWire capture of the default sink's monitor.
+//
+// Why PipeWire: this is a PipeWire system (mbeq/PipeWire EQ), and the
+// PulseAudio monitor capture was coming back silent. Capturing the sink
+// monitor directly via libpipewire reliably yields the system output, so
+// the speakers animate to whatever is actually playing.
+
+#include "audio_analysis.h"
+#include "audio_analysis.h"
+#include <pulse/pulseaudio.h>
+#include <pulse/simple.h>
+#include <pthread.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <glib.h>
+
+#include <pipewire/pipewire.h>
+#include <spa/param/audio/raw.h>
+#include <spa/param/audio/raw-utils.h>
+#include <spa/param/param.h>
+#include <spa/pod/builder.h>
+#include <spa/buffer/buffer.h>
+
+// ---- shared state ------------------------------------------------------
+static volatile int g_running = 0;
+static pa_threaded_mainloop *g_ml = NULL;
+static pa_context *g_ctx = NULL;
+static char g_monitor[256];     // "<sink>.monitor" node name for PW
+static char g_active[256];
+static float g_lvlL = 0.0f, g_lvlR = 0.0f;
+static int g_monitor_ready = 0;
+static pthread_mutex_t g_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+// ---- PipeWire capture --------------------------------------------------
+static struct pw_thread_loop *g_pw_loop = NULL;
+static struct pw_context *g_pw_ctx = NULL;
+static struct pw_core *g_pw_core = NULL;
+static struct pw_stream *g_pw_stream = NULL;
+static struct spa_hook g_pw_stream_hook;
+
+static void set_active(const char *name) {
+    pthread_mutex_lock(&g_mtx);
+    if (name && *name) snprintf(g_active, sizeof(g_active), "%s", name);
+    else g_active[0] = '\0';
+    pthread_mutex_unlock(&g_mtx);
+}
+
+const char *audio_stream_active(void) {
+    static char buf[256];
+    pthread_mutex_lock(&g_mtx);
+    snprintf(buf, sizeof(buf), "%s", g_active);
+    pthread_mutex_unlock(&g_mtx);
+    return buf;
+}
+
+void audio_stream_levels(float *l, float *r) {
+    pthread_mutex_lock(&g_mtx);
+    *l = g_lvlL;
+    *r = g_lvlR;
+    pthread_mutex_unlock(&g_mtx);
+}
+
+// ---- active playback stream scan (PulseAudio) -------------------------
+static int g_seen = 0;
+
+static void sink_input_cb(pa_context *c, const pa_sink_input_info *i,
+                          int eol, void *u) {
+    (void)c; (void)u;
+    if (eol) {
+        if (!g_seen) set_active("");
+        return;
+    }
+    if (i->corked) return;
+    g_seen = 1;
+    const char *media = pa_proplist_gets(i->proplist, PA_PROP_MEDIA_NAME);
+    const char *app = pa_proplist_gets(i->proplist, PA_PROP_APPLICATION_NAME);
+    set_active(media && *media ? media : (app ? app : ""));
+}
+
+static void scan_streams(pa_context *c) {
+    g_seen = 0;
+    pa_context_get_sink_input_info_list(c, sink_input_cb, NULL);
+}
+
+// ---- default sink -> monitor node name (PulseAudio) -------------------
+static void sink_info_cb(pa_context *c, const pa_sink_info *i,
+                         int eol, void *u) {
+    (void)c; (void)u;
+    if (eol || !i) return;
+    snprintf(g_monitor, sizeof(g_monitor), "%s.monitor", i->name);
+    g_monitor_ready = 1;
+    pa_threaded_mainloop_signal(g_ml, 0);
+}
+
+static void server_info_cb(pa_context *c, const pa_server_info *i, void *u) {
+    (void)u;
+    if (!i) return;
+    pa_context_get_sink_info_by_name(c, i->default_sink_name, sink_info_cb, NULL);
+}
+
+static void subscribe_cb(pa_context *c, pa_subscription_event_type_t t,
+                         uint32_t idx, void *u) {
+    (void)t; (void)idx; (void)u;
+    scan_streams(c);
+}
+
+static void state_cb(pa_context *c, void *u) {
+    (void)u;
+    if (pa_context_get_state(c) != PA_CONTEXT_READY) return;
+    pa_context_get_server_info(c, server_info_cb, NULL);
+    scan_streams(c);
+    pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_SINK_INPUT, NULL, NULL);
+}
+
+// ---- PipeWire capture process -------------------------------------------
+static void on_pw_process(void *data) {
+    (void)data;
+    if (!g_pw_stream) return;
+    struct pw_buffer *b = pw_stream_dequeue_buffer(g_pw_stream);
+    if (!b || !b->buffer) { if (b) pw_stream_queue_buffer(g_pw_stream, b); return; }
+    struct spa_buffer *buf = b->buffer;
+    if (buf->n_datas > 0 && buf->datas[0].data && buf->datas[0].chunk) {
+        float *d = (float *)buf->datas[0].data;
+        // We requested F32LE stereo, so the buffer is interleaved 2ch.
+        uint32_t ch = 2;
+        uint32_t n = buf->datas[0].chunk->size / (uint32_t)sizeof(float);
+        double sL = 0.0, sR = 0.0; uint32_t c = 0;
+        for (uint32_t i = 0; i + 1 < n; i += ch) {
+            float l = d[i];
+            float r = d[i + 1];
+            sL += (double)l * l;
+            sR += (double)r * r;
+            c++;
+        }
+        pthread_mutex_lock(&g_mtx);
+        g_lvlL = c ? (float)sqrt(sL / c) : 0.0f;
+        g_lvlR = c ? (float)sqrt(sR / c) : 0.0f;
+        pthread_mutex_unlock(&g_mtx);
+    }
+    // Feed the analysis module (raw ring, RMS/peak, FFT, bands).
+    audio_analysis_push(d, (int)n, 2);
+    pw_stream_queue_buffer(g_pw_stream, b);
+}
+
+void audio_stream_snapshot(audio_features_t *out) {
+    audio_analysis_snapshot(out);
+}
+
+static void on_pw_state(void *data, enum pw_stream_state old,
+                          enum pw_stream_state state, const char *error) {
+    (void)data; (void)old;
+    g_print("ocws-speaker-gl: PW stream %s%s%s\n",
+        pw_stream_state_as_string(state),
+        error ? " (" : "", error ? error : "");
+}
+
+static int setup_pw_capture(void) {
+    pw_init(NULL, NULL);
+    g_pw_loop = pw_thread_loop_new("ocws-speaker", NULL);
+    if (!g_pw_loop) return -1;
+    pw_thread_loop_start(g_pw_loop);
+
+    struct pw_loop *loop = pw_thread_loop_get_loop(g_pw_loop);
+    g_pw_ctx = pw_context_new(loop, NULL, 0);
+    if (!g_pw_ctx) { pw_thread_loop_stop(g_pw_loop); return -1; }
+    g_pw_core = pw_context_connect(g_pw_ctx, NULL, 0);
+    if (!g_pw_core) { pw_context_destroy(g_pw_ctx); return -1; }
+
+    struct pw_properties *p = pw_properties_new(
+        PW_KEY_MEDIA_TYPE, "Audio",
+        PW_KEY_MEDIA_CATEGORY, "Capture",
+        PW_KEY_MEDIA_ROLE, "Monitor",
+        NULL);
+    if (g_monitor[0])
+        pw_properties_set(p, PW_KEY_TARGET_OBJECT, g_monitor);
+
+    pw_thread_loop_lock(g_pw_loop);
+    g_pw_stream = pw_stream_new(g_pw_core, "ocws-speaker", p);
+    if (!g_pw_stream) { pw_thread_loop_unlock(g_pw_loop); return -1; }
+
+    static const struct pw_stream_events ev = {
+        .version = PW_VERSION_STREAM_EVENTS,
+        .process = on_pw_process,
+        .state_changed = on_pw_state,
+    };
+    pw_stream_add_listener(g_pw_stream, &g_pw_stream_hook, &ev, NULL);
+
+    // Request F32LE stereo @48k; PipeWire converts from the monitor's
+    // native format (s32le) for us.
+    struct spa_audio_info_raw raw = SPA_AUDIO_INFO_RAW_INIT(
+        .format = SPA_AUDIO_FORMAT_F32_LE,
+        .channels = 2,
+        .rate = 48000);
+    uint8_t pbuf[256];
+    struct spa_pod_builder pb = SPA_POD_BUILDER_INIT(pbuf, sizeof(pbuf));
+    const struct spa_pod *params[1];
+    params[0] = spa_format_audio_raw_build(&pb, SPA_PARAM_EnumFormat, &raw);
+
+    int r = pw_stream_connect(g_pw_stream, PW_DIRECTION_INPUT, PW_ID_ANY,
+        PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS | PW_STREAM_FLAG_RT_PROCESS,
+        params, params[0] ? 1 : 0);
+    pw_thread_loop_unlock(g_pw_loop);
+    return r;
+}
+
+// ---- public API ----------------------------------------------------------
+int audio_stream_init(void) {
+    g_running = 1;
+    g_ml = pa_threaded_mainloop_new();
+    if (!g_ml) return -1;
+
+    pa_mainloop_api *api = pa_threaded_mainloop_get_api(g_ml);
+    g_ctx = pa_context_new(api, "ocws-speaker");
+    if (!g_ctx) { pa_threaded_mainloop_free(g_ml); g_ml = NULL; return -1; }
+
+    pa_context_set_state_callback(g_ctx, state_cb, NULL);
+    pa_context_set_subscribe_callback(g_ctx, subscribe_cb, NULL);
+    pa_context_connect(g_ctx, NULL, 0, NULL);
+    pa_threaded_mainloop_start(g_ml);
+
+    pa_threaded_mainloop_lock(g_ml);
+    while (!g_monitor_ready &&
+           pa_context_get_state(g_ctx) != PA_CONTEXT_FAILED &&
+           pa_context_get_state(g_ctx) != PA_CONTEXT_TERMINATED)
+        pa_threaded_mainloop_wait(g_ml);
+    pa_threaded_mainloop_unlock(g_ml);
+
+    if (setup_pw_capture() != 0)
+        g_printerr("ocws-speaker: PipeWire capture failed; running on idle animation.\n");
+
+    if (audio_analysis_init(1024, 8192, 48000, 2) != 0)
+        g_printerr("ocws-speaker: audio_analysis init failed.\n");
+
+    return g_monitor_ready ? 0 : -1;
+}
+
+void audio_stream_deinit(void) {
+    g_running = 0;
+    if (g_pw_stream) {
+        pw_thread_loop_lock(g_pw_loop);
+        pw_stream_disconnect(g_pw_stream);
+        pw_stream_destroy(g_pw_stream);
+        pw_thread_loop_unlock(g_pw_loop);
+        g_pw_stream = NULL;
+    }
+    if (g_pw_core) {
+        pw_thread_loop_lock(g_pw_loop);
+        pw_core_disconnect(g_pw_core);
+        pw_thread_loop_unlock(g_pw_loop);
+        g_pw_core = NULL;
+    }
+    if (g_pw_ctx) { pw_context_destroy(g_pw_ctx); g_pw_ctx = NULL; }
+    if (g_pw_loop) { pw_thread_loop_stop(g_pw_loop); pw_thread_loop_destroy(g_pw_loop); g_pw_loop = NULL; }
+    audio_analysis_deinit();
+    pw_deinit();
+
+    if (g_ctx) { pa_context_disconnect(g_ctx); pa_context_unref(g_ctx); g_ctx = NULL; }
+    if (g_ml) { pa_threaded_mainloop_stop(g_ml); pa_threaded_mainloop_free(g_ml); g_ml = NULL; }
+}

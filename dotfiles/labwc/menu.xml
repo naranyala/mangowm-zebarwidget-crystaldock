@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <labwc_menu>
   <item label="Terminal">
-    <action name="Execute"><command>foot</command></action>
+    <action name="Execute"><command>contour</command></action>
   </item>
   <item label="Applications Launcher">
     <action name="Execute"><command>rofi -show drun</command></action>

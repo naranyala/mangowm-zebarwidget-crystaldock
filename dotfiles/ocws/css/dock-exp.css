@@ -2,11 +2,11 @@
  * Loads after tokens.css for dock-specific styling */
 
 /* Dock-specific token aliases */
-@define-color dock_bg alpha(@ocws_bg, 0.95);
-@define-color dock_surface alpha(@ocws_surface0, 0.8);
-@define-color dock_border alpha(@ocws_fg, 0.1);
-@define-color dock_hover alpha(@ocws_accent, 0.15);
-@define-color dock_active alpha(@ocws_accent, 0.25);
+@define-color dock_bg @ocws_bg;
+@define-color dock_surface @ocws_surface0;
+@define-color dock_border @ocws_fg;
+@define-color dock_hover @ocws_accent;
+@define-color dock_active @ocws_accent;
 
 /* Dock animations */
 button.dock_app {

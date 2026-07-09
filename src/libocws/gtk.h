@@ -25,28 +25,25 @@ static inline void ocws_gtk_enforce_premium_theme(void) {
  * Also adds the base classes for floating Cards and Shadows.
  */
 static inline void ocws_gtk_apply_dynamic_css(GtkApplication *app, const char *accent_hex) {
-    (void)app; // Not strictly needed since we use screen default
+    (void)app;
     
-    if (!accent_hex) accent_hex = "#89b4fa"; // Default fallback (Mocha Blue)
+    if (!accent_hex) accent_hex = "#89b4fa";
     
-    // Generate the CSS string dynamically
     char css[2048];
     snprintf(css, sizeof(css),
         "/* OCWS Premium Injected CSS */\n"
         "@define-color accent_color %s;\n"
         "@define-color accent_bg_color %s;\n"
         "\n"
-        "/* The Floating Card Abstraction */\n"
         ".ocws-card {\n"
-        "    background-color: alpha(@theme_bg_color, 0.6);\n"
+        "    background-color: @theme_bg_color;\n"
         "    border-radius: 12px;\n"
         "    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.25);\n"
-        "    border: 1px solid alpha(currentColor, 0.08);\n"
+        "    border: 1px solid @theme_bg_color;\n"
         "    margin: 8px;\n"
         "    padding: 16px;\n"
         "}\n"
         "\n"
-        "/* Premium Button Styling */\n"
         "button, .button {\n"
         "    border-radius: 8px;\n"
         "    transition: all 0.2s ease;\n"
@@ -66,7 +63,7 @@ static inline void ocws_gtk_apply_dynamic_css(GtkApplication *app, const char *a
     gtk_style_context_add_provider_for_screen(
         gdk_screen_get_default(),
         GTK_STYLE_PROVIDER(provider),
-        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 20
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
     );
     
     g_object_unref(provider);

@@ -72,6 +72,16 @@ else
   fi
 fi
 
+# --- Bi-Directional Dock Sync Daemon ---
+# Keeps pinned apps synchronized across DMS, Noctalia, Crystal-Dock, and SFWBar
+if command -v dock-sync.py >/dev/null 2>&1; then
+  pkill -f "python3.*dock-sync.py" 2>/dev/null || true
+  nohup dock-sync.py >/dev/null 2>&1 &
+elif [ -x "$HOME/.local/share/ocws/scripts/dock-sync.py" ]; then
+  pkill -f "python3.*dock-sync.py" 2>/dev/null || true
+  nohup "$HOME/.local/share/ocws/scripts/dock-sync.py" >/dev/null 2>&1 &
+fi
+
 # --- Notification daemon ---
 if command -v swaync >/dev/null 2>&1; then
   swaync &

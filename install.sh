@@ -145,12 +145,25 @@ case "${terminal_choice:-1}" in
     2) TERMINAL="contour"
        TERMINAL_DESC="contour"
        ;;
-    *) TERMINAL="foot"
-       TERMINAL_DESC="foot"
+    *) TERMINAL="contour"
+       TERMINAL_DESC="contour"
        ;;
 esac
 
 echo -e "  Selected: ${CYAN}${TERMINAL_DESC}${NC}"
+
+echo -e "\n  Use OCWS themed tmux configuration?"
+echo -e "    Replaces your ~/.tmux.conf with a theme-aware config."
+echo -e "    Your existing config will be backed up to dotfiles/tmux/tmux.conf.bak"
+echo -n "  Enter choice [y/N] (default: N): "
+read -r tmux_choice
+
+case "${tmux_choice:-N}" in
+    [Yy]) USE_TMUX=true ;;
+    *)    USE_TMUX=false ;;
+esac
+
+echo -e "  Tmux config: ${CYAN}${USE_TMUX}${NC}"
 
 # -------------------------------------------------------------------
 # Stage 3 — Mode-Aware Dependency Resolution
@@ -243,6 +256,7 @@ echo -e "\n${YELLOW}⚠ WARNING: This will deploy configurations to ~/.config/ a
 echo -e "  Mode: ${CYAN}${MODE_DESC}${NC}"
 echo -e "  Launcher: ${CYAN}${LAUNCHER_DESC}${NC}"
 echo -e "  Terminal: ${CYAN}${TERMINAL_DESC}${NC}"
+echo -e "  Tmux config: ${CYAN}${USE_TMUX}${NC}"
 echo -e "  Affected directories: labwc, ocws, foot, contour, gtk-3.0, gtk-4.0, mako, qt6ct"
 
 if [[ "$LAUNCHER" == "rofi" ]]; then
@@ -384,6 +398,20 @@ case "$TERMINAL" in
         ;;
 esac
 
+# Deploy Tmux
+if [ "$USE_TMUX" = true ]; then
+    info "Deploying OCWS Tmux configuration..."
+    if [ -f ~/.tmux.conf ]; then
+        cp ~/.tmux.conf "$SCRIPT_DIR/dotfiles/tmux/tmux.conf.bak" 2>/dev/null || true
+        pass "Existing tmux.conf backed up to dotfiles/tmux/tmux.conf.bak"
+    fi
+    mkdir -p ~/.config/tmux
+    if [ -f "$SCRIPT_DIR/dotfiles/tmux/tmux.conf" ]; then
+        cp "$SCRIPT_DIR/dotfiles/tmux/tmux.conf" ~/.tmux.conf 2>/dev/null || true
+        pass "OCWS tmux.conf deployed."
+    fi
+fi
+
 # 7. Deploy GTK Styling
 if [ -d "$SCRIPT_DIR/dotfiles/gtk-3.0" ] || [ -d "$SCRIPT_DIR/dotfiles/gtk-4.0" ] || [ -d "$SCRIPT_DIR/dotfiles/gtk" ]; then
     info "Deploying GTK Preferences..."
@@ -410,4 +438,21 @@ if [ -d "$SCRIPT_DIR/dotfiles/qt6ct" ]; then
     cp -r "$SCRIPT_DIR/dotfiles/qt6ct/"* ~/.config/qt6ct/ 2>/dev/null || true
     pass "Qt6ct synced."
 fi
+
+# 8. Deploy Compiled C Binaries
+info "Deploying compiled OCWS binaries..."
+if [ -d "$SCRIPT_DIR/zig-out/bin" ]; then
+    mkdir -p ~/.local/bin
+    cp -r "$SCRIPT_DIR/zig-out/bin/"* ~/.local/bin/ 2>/dev/null || true
+    
+    # Ensure they are executable
+    chmod +x ~/.local/bin/ocws-* 2>/dev/null || true
+    
+    pass "Compiled C binaries installed to ~/.local/bin/."
+else
+    warn "zig-out/bin not found. Run 'zig build' first if you want C utilities installed."
+fi
+
+echo -e "\n${GREEN}OCWS Installation Complete!${NC}"
+echo -e "You may need to log out and log back in, or restart your Wayland compositor."
 

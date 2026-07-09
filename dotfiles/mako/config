@@ -1,6 +1,6 @@
 [mako]
-font=Noto Sans 11
-width=350
+font=Noto Sans 10
+width=400
 height=300
 max-visible=5
 default-timeout=5000
@@ -14,6 +14,6 @@ border-radius=8
 border-size=2
 
 [colors]
-background=#313244
-text=#cdd6f4
-border=#89b4fa
+background=${base}
+text=${text}
+border=${surface1}

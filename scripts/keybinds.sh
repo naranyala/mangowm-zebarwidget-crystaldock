@@ -129,7 +129,7 @@ case "$ACTION" in
       echo ""
       echo "Examples:"
       echo "  $0 add A-x Execute 'flameshot gui'"
-      echo "  $0 add S-Return Execute foot"
+      echo "  $0 add S-Return Execute contour"
       echo "  $0 add A-F4 Close"
       exit 1
     fi

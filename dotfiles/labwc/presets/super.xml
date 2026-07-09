@@ -38,7 +38,7 @@
     <keybind key="S-m"><action name="Exit"/></keybind>
 
     <!-- Launchers (Super-based) -->
-    <keybind key="S-Return"><action name="Execute"><command>foot</command></action></keybind>
+    <keybind key="S-Return"><action name="Execute"><command>contour</command></action></keybind>
     <keybind key="S-d"><action name="Execute"><command>rofi -show drun</command></action></keybind>
 
     <!-- Window management (Super-based) -->
@@ -157,7 +157,7 @@
 
   <menu id="root-menu" label="Root Menu">
     <item label="Terminal">
-      <action name="Execute"><command>foot</command></action>
+      <action name="Execute"><command>contour</command></action>
     </item>
     <item label="Rofi Launcher">
       <action name="Execute"><command>rofi -show drun</command></action>

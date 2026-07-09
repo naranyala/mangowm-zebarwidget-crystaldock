@@ -88,7 +88,7 @@ HAS_FUZZEL=false
 check "labwc (Wayland compositor)" "labwc" && HAS_LABWC=true
 check "sfwbar (status bar)" "sfwbar" && HAS_SFWBAR=true
 check "fuzzel (app launcher)" "fuzzel" && HAS_FUZZEL=true
-check "foot (terminal)" "foot"
+check "contour (terminal)" "contour"
 echo ""
 
 # ============================================================

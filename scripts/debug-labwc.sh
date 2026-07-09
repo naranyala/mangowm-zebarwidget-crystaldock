@@ -20,4 +20,4 @@ echo "• Check the terminal output below for labwc error logs."
 echo "=========================================================="
 
 # Run labwc with verbose logging and start a terminal inside it automatically
-labwc --verbose -s "foot"
+labwc --verbose -s "contour"

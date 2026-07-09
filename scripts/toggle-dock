@@ -1,0 +1,370 @@
+#!/bin/bash
+# toggle-dock — Switch between dock implementations: dms, noctalia, crystal
+#
+# Shared state: dock-sync.py keeps pinned apps in sync across all docks.
+# This script saves state before switching and restores it to the new dock.
+#
+# Usage:
+#   toggle-dock              # cycle: dms → noctalia → crystal → dms
+#   toggle-dock dms          # switch to DankMaterialShell dock
+#   toggle-dock noctalia     # switch to Noctalia dock
+#   toggle-dock crystal      # switch to Crystal-dock
+#   toggle-dock status       # show current dock state
+#   toggle-dock sync         # force sync pinned apps now
+#   toggle-dock backup       # save current state to backup
+#   toggle-dock restore      # restore from backup to all docks
+#   toggle-dock sync-start   # start dock-sync daemon
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OCWS_DIR="$HOME/.config/ocws"
+DOCK_STATE="$OCWS_DIR/dock"
+DOCK_APPS="$HOME/.local/share/ocws/dock_apps"
+BACKUP_FILE="$HOME/.local/share/ocws/dock_apps.backup"
+
+mkdir -p "$OCWS_DIR" "$HOME/.local/share/ocws"
+
+# === Dock Detection ===
+
+get_current_dock() {
+    cat "$DOCK_STATE" 2>/dev/null || echo "none"
+}
+
+set_current_dock() {
+    echo "$1" > "$DOCK_STATE"
+}
+
+# === Dock Kill ===
+
+kill_all_docks() {
+    local killed=0
+    for proc in dms noctalia crystal-dock; do
+        if pgrep -x "$proc" >/dev/null 2>&1; then
+            echo "  Stopping $proc..."
+            pkill -x "$proc"
+            killed=1
+        fi
+    done
+    rm -f /tmp/qipc_sharedmemory_crystaldock* /tmp/qipc_systemsem_crystaldock* 2>/dev/null
+    [ $killed -eq 1 ] && sleep 0.3
+}
+
+# === Dock Start ===
+
+start_dms() {
+    if ! command -v dms >/dev/null 2>&1; then
+        echo "  Error: dms not installed"
+        return 1
+    fi
+    echo "  Starting DankMaterialShell..."
+    nohup dms run >/dev/null 2>&1 &
+    sleep 0.5
+    pgrep -x dms >/dev/null 2>&1 && echo "  DMS dock running" || echo "  Warning: DMS may not have started"
+}
+
+start_noctalia() {
+    if ! command -v noctalia >/dev/null 2>&1; then
+        echo "  Error: noctalia not installed"
+        return 1
+    fi
+    echo "  Starting Noctalia..."
+    nohup noctalia >/dev/null 2>&1 &
+    sleep 0.5
+    pgrep -x noctalia >/dev/null 2>&1 && echo "  Noctalia dock running" || echo "  Warning: Noctalia may not have started"
+}
+
+start_crystal() {
+    if ! command -v crystal-dock >/dev/null 2>&1; then
+        echo "  Error: crystal-dock not installed"
+        return 1
+    fi
+    echo "  Starting Crystal-dock..."
+    nohup crystal-dock >/dev/null 2>&1 &
+    sleep 0.5
+    pgrep -x crystal-dock >/dev/null 2>&1 && echo "  Crystal-dock running" || echo "  Warning: Crystal-dock may not have started"
+}
+
+# === Sync Daemon ===
+
+ensure_sync_daemon() {
+    if ! pgrep -f "python3.*dock-sync" >/dev/null 2>&1; then
+        local dock_sync=""
+        if command -v dock-sync.py >/dev/null 2>&1; then
+            dock_sync="dock-sync.py"
+        elif [ -x "$SCRIPT_DIR/dock-sync.py" ]; then
+            dock_sync="$SCRIPT_DIR/dock-sync.py"
+        fi
+        if [ -n "$dock_sync" ]; then
+            echo "  Starting dock-sync daemon..."
+            nohup python3 "$dock_sync" >/dev/null 2>&1 &
+            sleep 0.3
+        fi
+    fi
+}
+
+# === State Save/Restore via dock-sync.py ===
+
+sync_backup() {
+    python3 -c "
+import os, sys, json, subprocess, ast, re
+
+HOME = os.environ['HOME']
+STATE_DIR = os.path.join(HOME, '.local/share/ocws')
+BACKUP_FILE = os.path.join(STATE_DIR, 'dock_apps.backup')
+os.makedirs(STATE_DIR, exist_ok=True)
+
+def get_dms():
+    try:
+        out = subprocess.check_output(['gsettings', 'get', 'org.gnome.shell', 'favorite-apps'], text=True, timeout=5).strip()
+        apps = ast.literal_eval(out)
+        return [a.replace('.desktop','').strip() for a in apps if a.replace('.desktop','').strip()]
+    except: return None
+
+def get_noctalia():
+    p = os.path.join(HOME, '.config/noctalia/config.toml')
+    if not os.path.exists(p): return None
+    try:
+        with open(p) as f: content = f.read()
+        m = re.search(r'pinned\s*=\s*(\[[^\]]*\])', content)
+        if m: return [a.replace('.desktop','').strip() for a in ast.literal_eval(m.group(1)) if a.replace('.desktop','').strip()]
+    except: pass
+    return None
+
+def get_crystal():
+    p = os.path.join(HOME, '.config/crystal-dock/panel_1.conf')
+    if not os.path.exists(p): return None
+    try:
+        with open(p) as f:
+            for line in f:
+                if line.startswith('launchers='):
+                    apps = line.split('=',1)[1].strip().strip('\"').split(';')
+                    skip = {'show-desktop','separator','lxqt-lockscreen','lxqt-logout'}
+                    return [a.replace('.desktop','').strip() for a in apps if a.replace('.desktop','').strip() not in skip]
+    except: pass
+    return None
+
+# Read from any available dock
+apps = None
+for getter in [get_dms, get_noctalia, get_crystal]:
+    apps = getter()
+    if apps: break
+
+if not apps:
+    # Try loading backup
+    if os.path.exists(BACKUP_FILE):
+        with open(BACKUP_FILE) as f: apps = json.load(f).get('apps', [])
+
+if apps:
+    with open(BACKUP_FILE, 'w') as f:
+        json.dump({'apps': apps, 'count': len(apps)}, f)
+    print(','.join(apps))
+else:
+    print('')
+" 2>/dev/null
+}
+
+sync_restore() {
+    local apps_csv="$1"
+    [ -z "$apps_csv" ] && return 0
+    
+    python3 -c "
+import os, sys, json, subprocess, ast, re
+
+HOME = os.environ['HOME']
+apps = '$apps_csv'.split(',')
+
+def set_dms(apps):
+    desktop = [f'{a}.desktop' if not a.endswith('.desktop') else a for a in apps]
+    subprocess.run(['gsettings', 'set', 'org.gnome.shell', 'favorite-apps', str(desktop).replace(\"'\", '\"')], timeout=5, capture_output=True)
+
+def set_noctalia(apps):
+    p = os.path.join(HOME, '.config/noctalia/config.toml')
+    if not os.path.exists(p): return
+    with open(p) as f: content = f.read()
+    val = str(apps).replace(\"'\", '\"')
+    content = re.sub(r'pinned\s*=.*', f'pinned = {val}', content)
+    with open(p, 'w') as f: f.write(content)
+
+def set_crystal(apps):
+    p = os.path.join(HOME, '.config/crystal-dock/panel_1.conf')
+    if not os.path.exists(p): return
+    with open(p) as f: content = f.read()
+    launchers = 'show-desktop;' + ';'.join(apps) + ';separator;lxqt-lockscreen;lxqt-logout;separator'
+    content = re.sub(r'launchers=.*', f'launchers=\"{launchers}\"', content)
+    with open(p, 'w') as f: f.write(content)
+
+for setter in [set_dms, set_noctalia, set_crystal]:
+    try: setter(apps)
+    except: pass
+" 2>/dev/null
+}
+
+force_sync_now() {
+    echo "  Syncing pinned apps across all docks..."
+    local apps=$(sync_backup)
+    if [ -n "$apps" ]; then
+        echo "  Found $apps"
+        sync_restore "$apps"
+        echo "  Synced successfully"
+    else
+        echo "  No apps found to sync"
+    fi
+}
+
+# === Status ===
+
+show_status() {
+    local current=$(get_current_dock)
+    echo "Current dock: $current"
+    echo ""
+    
+    echo "Running processes:"
+    for proc in dms noctalia crystal-dock; do
+        local pid=$(pgrep -x "$proc" 2>/dev/null || echo "")
+        if [ -n "$pid" ]; then
+            echo "  $proc (PID: $pid)"
+        else
+            echo "  $proc (not running)"
+        fi
+    done
+    local sync_pid=$(pgrep -f "python3.*dock-sync" 2>/dev/null || echo "")
+    if [ -n "$sync_pid" ]; then
+        echo "  dock-sync (PID: $sync_pid)"
+    else
+        echo "  dock-sync (not running)"
+    fi
+    
+    echo ""
+    echo "Shared apps state:"
+    if [ -f "$DOCK_APPS" ]; then
+        echo "  $(cat "$DOCK_APPS")"
+    else
+        echo "  (no state file)"
+    fi
+    
+    echo ""
+    echo "Backup state:"
+    if [ -f "$BACKUP_FILE" ]; then
+        python3 -c "import json; d=json.load(open('$BACKUP_FILE')); print(f'  {d[\"count\"]} apps: {d[\"apps\"]}')" 2>/dev/null || echo "  (invalid backup)"
+    else
+        echo "  (no backup)"
+    fi
+}
+
+# === Main ===
+
+case "${1:-}" in
+    dms|noctalia|crystal)
+        TARGET="$1"
+        CURRENT=$(get_current_dock)
+        
+        if [ "$CURRENT" = "$TARGET" ]; then
+            echo "Already on $TARGET dock"
+            show_status
+            exit 0
+        fi
+        
+        echo "Switching dock: $CURRENT → $TARGET"
+        
+        # 1. Save current state to backup
+        echo "  Saving current state..."
+        local saved_apps=$(sync_backup)
+        if [ -n "$saved_apps" ]; then
+            echo "  Saved: $saved_apps"
+        fi
+        
+        # 2. Kill existing docks
+        kill_all_docks
+        
+        # 3. Start target dock
+        case "$TARGET" in
+            dms)     start_dms ;;
+            noctalia) start_noctalia ;;
+            crystal)  start_crystal ;;
+        esac
+        
+        # 4. Restore state to new dock
+        if [ -n "$saved_apps" ]; then
+            echo "  Restoring apps to $TARGET..."
+            sync_restore "$saved_apps"
+        fi
+        
+        # 5. Ensure sync daemon is running
+        ensure_sync_daemon
+        
+        # 6. Update state file
+        set_current_dock "$TARGET"
+        
+        echo ""
+        echo "Dock switched to: $TARGET"
+        ;;
+    
+    status)
+        show_status
+        ;;
+    
+    sync)
+        force_sync_now
+        ;;
+    
+    backup)
+        echo "Saving current state..."
+        apps=$(sync_backup)
+        [ -n "$apps" ] && echo "  Saved: $apps" || echo "  No apps found"
+        ;;
+    
+    restore)
+        echo "Restoring from backup..."
+        if [ -f "$BACKUP_FILE" ]; then
+            apps=$(python3 -c "import json; print(','.join(json.load(open('$BACKUP_FILE')).get('apps',[])))" 2>/dev/null)
+            if [ -n "$apps" ]; then
+                sync_restore "$apps"
+                echo "  Restored: $apps"
+            else
+                echo "  Backup is empty"
+            fi
+        else
+            echo "  No backup file found"
+        fi
+        ;;
+    
+    sync-start)
+        ensure_sync_daemon
+        if pgrep -f "python3.*dock-sync" >/dev/null 2>&1; then
+            echo "Sync daemon running (PID: $(pgrep -f 'python3.*dock-sync'))"
+        else
+            echo "Sync daemon failed to start"
+        fi
+        ;;
+    
+    cycle)
+        CURRENT=$(get_current_dock)
+        case "$CURRENT" in
+            dms)     NEXT="noctalia" ;;
+            noctalia) NEXT="crystal" ;;
+            crystal)  NEXT="dms" ;;
+            *)       NEXT="dms" ;;
+        esac
+        exec "$0" "$NEXT"
+        ;;
+    
+    *)
+        echo "Usage: toggle-dock <command>"
+        echo ""
+        echo "Commands:"
+        echo "  dms         Switch to DankMaterialShell dock"
+        echo "  noctalia    Switch to Noctalia dock"
+        echo "  crystal     Switch to Crystal-dock"
+        echo "  cycle       Cycle through: dms → noctalia → crystal → dms"
+        echo "  status      Show current dock state and running processes"
+        echo "  sync        Force sync pinned apps across all docks now"
+        echo "  backup      Save current state to backup file"
+        echo "  restore     Restore from backup to all running docks"
+        echo "  sync-start  Start the dock-sync daemon"
+        echo ""
+        echo "Shared state is preserved across dock switches."
+        echo "Backup file: $BACKUP_FILE"
+        exit 1
+        ;;
+esac

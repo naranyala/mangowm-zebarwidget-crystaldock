@@ -12,26 +12,33 @@ import json
 import os
 
 
-CSS = """
-/* OCWS LLM Runner — Glassmorphism Theme */
+def _load_css():
+    """Load tokens.css + app CSS from one provider so @define-color scoping works."""
+    css = ""
 
+    tokens_path = os.path.expanduser("~/.config/ocws/tokens.css")
+    if os.path.isfile(tokens_path):
+        with open(tokens_path) as f:
+            css += f.read() + "\n"
+
+    css += """
 window {
-    background-color: #1e1e2e;
+    background-color: @theme_bg_color;
 }
 
 headerbar {
-    background-color: alpha(#1e1e2e, 0.95);
-    border-bottom: 1px solid alpha(#cdd6f4, 0.08);
+    background-color: @theme_bg_color;
+    border-bottom: 1px solid @theme_fg_color;
 }
 
 headerbar title {
-    color: #cdd6f4;
+    color: @theme_text_color;
     font-weight: bold;
 }
 
 .sidebar {
-    background-color: alpha(#181825, 0.95);
-    border-right: 1px solid alpha(#cdd6f4, 0.08);
+    background-color: @theme_bg_color;
+    border-right: 1px solid @theme_fg_color;
     padding: 8px;
 }
 
@@ -40,120 +47,120 @@ headerbar title {
     margin: 2px 0;
     border-radius: 8px;
     background-color: transparent;
-    color: #a6adc8;
+    color: @theme_text_color;
     text-align: left;
 }
 
 .sidebar button:hover {
-    background-color: alpha(#313244, 0.8);
-    color: #cdd6f4;
+    background-color: @theme_bg_color;
+    color: @theme_text_color;
 }
 
 .sidebar button.active {
-    background-color: alpha(#89b4fa, 0.2);
-    color: #89b4fa;
+    background-color: @theme_selected_bg_color;
+    color: @theme_selected_fg_color;
 }
 
 .sidebar button.danger {
-    color: #f38ba8;
+    color: @theme_text_color;
 }
 
 .sidebar button.danger:hover {
-    background-color: alpha(#f38ba8, 0.15);
+    background-color: @theme_bg_color;
 }
 
 .chat-area {
-    background-color: #1e1e2e;
+    background-color: @theme_bg_color;
     padding: 8px;
 }
 
 .message-user {
-    background-color: alpha(#89b4fa, 0.15);
+    background-color: @theme_selected_bg_color;
     border-radius: 12px;
     padding: 12px 16px;
     margin: 4px 60px 4px 120px;
-    color: #cdd6f4;
+    color: @theme_text_color;
 }
 
 .message-assistant {
-    background-color: alpha(#313244, 0.8);
+    background-color: @theme_bg_color;
     border-radius: 12px;
     padding: 12px 16px;
     margin: 4px 120px 4px 60px;
-    color: #cdd6f4;
+    color: @theme_text_color;
 }
 
 .message-system {
-    background-color: alpha(#f9e2af, 0.1);
+    background-color: @theme_bg_color;
     border-radius: 8px;
     padding: 8px 12px;
     margin: 4px 80px;
-    color: #f9e2af;
+    color: @theme_text_color;
     font-size: 11px;
 }
 
 .input-area {
-    background-color: alpha(#181825, 0.95);
-    border-top: 1px solid alpha(#cdd6f4, 0.08);
+    background-color: @theme_bg_color;
+    border-top: 1px solid @theme_fg_color;
     padding: 8px;
 }
 
 .input-entry {
-    background-color: #313244;
-    border: 1px solid alpha(#cdd6f4, 0.1);
+    background-color: @theme_bg_color;
+    border: 1px solid @theme_fg_color;
     border-radius: 8px;
     padding: 8px 12px;
-    color: #cdd6f4;
+    color: @theme_text_color;
     font-size: 13px;
 }
 
 .input-entry:focus {
-    border-color: alpha(#89b4fa, 0.5);
+    border-color: @theme_selected_bg_color;
 }
 
 .send-button {
-    background-color: #89b4fa;
-    color: #1e1e2e;
+    background-color: @theme_selected_bg_color;
+    color: @theme_selected_fg_color;
     border-radius: 8px;
     padding: 8px 16px;
     font-weight: bold;
 }
 
 .send-button:hover {
-    background-color: #b4befe;
+    background-color: @theme_selected_bg_color;
 }
 
 .ocr-button {
-    background-color: alpha(#a6e3a1, 0.15);
-    color: #a6e3a1;
+    background-color: transparent;
+    color: @theme_text_color;
     border-radius: 8px;
     padding: 8px 12px;
 }
 
 .ocr-button:hover {
-    background-color: alpha(#a6e3a1, 0.25);
+    background-color: @theme_bg_color;
 }
 
 .status-bar {
-    background-color: alpha(#181825, 0.95);
-    border-top: 1px solid alpha(#cdd6f4, 0.08);
+    background-color: @theme_bg_color;
+    border-top: 1px solid @theme_fg_color;
     padding: 4px 8px;
-    color: #a6adc8;
+    color: @theme_text_color;
     font-size: 11px;
 }
 
 .model-active {
-    background-color: alpha(#a6e3a1, 0.15);
+    background-color: transparent;
     border-radius: 6px;
     padding: 4px 8px;
-    color: #a6e3a1;
+    color: @theme_selected_bg_color;
 }
 
 .model-inactive {
-    background-color: alpha(#6c7086, 0.15);
+    background-color: transparent;
     border-radius: 6px;
     padding: 4px 8px;
-    color: #6c7086;
+    color: @theme_text_color;
 }
 
 session-item {
@@ -163,12 +170,12 @@ session-item {
 }
 
 session-item:hover {
-    background-color: alpha(#313244, 0.6);
+    background-color: @theme_bg_color;
 }
 
 session-item.active {
-    background-color: alpha(#89b4fa, 0.15);
-    border-left: 3px solid #89b4fa;
+    background-color: @theme_bg_color;
+    border-left: 3px solid @theme_selected_bg_color;
 }
 
 scrollbar {
@@ -176,14 +183,14 @@ scrollbar {
 }
 
 scrollbar slider {
-    background-color: alpha(#45475a, 0.5);
+    background-color: @theme_bg_color;
     border-radius: 4px;
     min-width: 6px;
     min-height: 6px;
 }
 
 scrollbar slider:hover {
-    background-color: alpha(#585b70, 0.7);
+    background-color: @theme_bg_color;
 }
 
 frame {
@@ -194,6 +201,10 @@ frame > border {
     border: none;
 }
 """
+    return css
+
+
+CSS = _load_css()
 
 
 class LLMRunnerApp:

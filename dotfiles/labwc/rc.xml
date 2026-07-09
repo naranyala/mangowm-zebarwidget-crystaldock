@@ -8,7 +8,7 @@
   <margin top="0" bottom="4" left="8" right="8" />
 
   <theme>
-    <name>Clearlooks</name>
+    <name>ocws-catppuccin-mocha</name>
     <cornerRadius>8</cornerRadius>
     <font place="ActiveWindow">
       <name>sans</name>
@@ -47,7 +47,7 @@
 
 
     <!-- Launchers -->
-    <keybind key="A-Return"><action name="Execute"><command>foot</command></action></keybind>
+    <keybind key="A-Return"><action name="Execute"><command>contour</command></action></keybind>
     <keybind key="A-a"><action name="Execute"><command>rofi -show drun</command></action></keybind>
     <keybind key="A-Down"><action name="Execute"><command>rofi -show drun</command></action></keybind>
     <keybind key="A-Up"><action name="Execute"><command>rofi -show drun</command></action></keybind>
@@ -150,7 +150,7 @@
     <keybind key="XF86MonBrightnessDown"><action name="Execute"><command>brightnessctl set 10%-</command></action></keybind>
 
     <!-- Window Management Extras -->
-    <keybind key="W-Return"><action name="Execute"><command>foot</command></action></keybind>
+    <keybind key="W-Return"><action name="Execute"><command>contour</command></action></keybind>
     <!-- ponytail: sfwbar window switcher disabled — sfwbar not default anymore -->
     <!-- <keybind key="A-BackSpace"><action name="Execute"><command>sfwbar -c "SwitcherEvent('forward')"</command></action></keybind> -->
     <keybind key="W-w"><action name="Execute"><command>wallpaper random</command></action></keybind>
@@ -201,7 +201,7 @@
 
   <menu id="root-menu" label="Root Menu">
     <item label="Terminal">
-      <action name="Execute"><command>foot</command></action>
+      <action name="Execute"><command>contour</command></action>
     </item>
     <item label="Rofi Launcher">
       <action name="Execute"><command>rofi -show drun</command></action>

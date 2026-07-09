@@ -179,7 +179,7 @@ render_template() {
                     OCWS_BORDER)     var_value=$(ini_get "ocws.border" "1") ;;
                     OCWS_RADIUS)     var_value=$(ini_get "ocws.radius" "8") ;;
                     OCWS_SHADOW)     var_value=$(ini_get "ocws.shadow" "4") ;;
-                    ICON_THEME)      var_value=$(ini_get "gtk3.icon_theme" "") ;;
+                    ICON_THEME)      var_value=$(ini_get "gtk3.icon_theme" "elementary") ;;
                     FONT_MONO)       var_value=$(ini_get "fonts.mono" "Noto Sans Mono CJK SC:hilight=Filled") ;;
                     THEMERC_FONT)        var_value=$(ini_get "labwc.themerc_font" "sans 10") ;;
                     THEMERC_ACTIVE_BG)   var_value=$(ini_get "labwc.themerc_active_bg" "#1e1e2e") ;;
@@ -245,13 +245,61 @@ render_template() {
                             fi
                         elif [[ "$var_name" == ROFI_* ]]; then
                             local key="${var_name#ROFI_}"
-                            var_value=$(ini_get "rofi.${key,,}" "")
+                            key="${key,,}"
+                            case "$key" in
+                                bg)             var_value=$(ini_get "colors.bg" "#1e1e2e") ;;
+                                bg_alt)         var_value=$(ini_get "colors.surface" "#313244") ;;
+                                fg)             var_value=$(ini_get "colors.fg" "#cdd6f4") ;;
+                                fg_alt)         var_value=$(ini_get "colors.muted" "#a6adc8") ;;
+                                accent)         var_value=$(ini_get "colors.accent" "#89b4fa") ;;
+                                urgent)         var_value=$(ini_get "colors.urgent" "#f38ba8") ;;
+                                error)          var_value=$(ini_get "colors.urgent" "#f38ba8") ;;
+                                selected)       var_value=$(ini_get "colors.surface" "#45475a") ;;
+                                border_width)   var_value=$(ini_get "ocws.border" "2") ;;
+                                border_radius)  var_value=$(ini_get "ocws.radius" "8") ;;
+                                icon_theme)     var_value=$(ini_get "gtk3.icon_theme" "Papirus-Dark") ;;
+                                font)           var_value=$(ini_get "fonts.interface" "Noto Sans 10") ;;
+                                terminal)       var_value="foot" ;;
+                                *)              var_value=$(ini_get "rofi.${key}" "") ;;
+                            esac
                         elif [[ "$var_name" == FUZZEL_* ]]; then
                             local key="${var_name#FUZZEL_}"
-                            var_value=$(ini_get "fuzzel.${key,,}" "")
+                            key="${key,,}"
+                            case "$key" in
+                                bg)             var_value=$(ini_get "colors.bg" "#1e1e2e") ;;
+                                fg)             var_value=$(ini_get "colors.fg" "#cdd6f4") ;;
+                                fg_alt)         var_value=$(ini_get "colors.muted" "#a6adc8") ;;
+                                accent)         var_value=$(ini_get "colors.accent" "#89b4fa") ;;
+                                urgent)         var_value=$(ini_get "colors.urgent" "#f38ba8") ;;
+                                selected)       var_value=$(ini_get "colors.surface" "#45475a") ;;
+                                border_color)   var_value=$(ini_get "colors.border" "#45475a") ;;
+                                border_width)   var_value=$(ini_get "ocws.border" "2") ;;
+                                border_radius)  var_value=$(ini_get "ocws.radius" "8") ;;
+                                icon_theme)     var_value=$(ini_get "gtk3.icon_theme" "Papirus-Dark") ;;
+                                font)           var_value=$(ini_get "fonts.interface" "Noto Sans 10") ;;
+                                prompt)         var_value="\"> \"" ;;
+                                placeholder)    var_value="Search..." ;;
+                                width)          var_value="40" ;;
+                                lines)          var_value="10" ;;
+                                hpad)           var_value="20" ;;
+                                vpad)           var_value="20" ;;
+                                *)              var_value=$(ini_get "fuzzel.${key}" "") ;;
+                            esac
                         elif [[ "$var_name" == MAKO_* ]]; then
                             local key="${var_name#MAKO_}"
-                            var_value=$(ini_get "mako.${key,,}" "")
+                            key="${key,,}"
+                            case "$key" in
+                                bg)             var_value=$(ini_get "colors.bg" "#1e1e2e") ;;
+                                text)           var_value=$(ini_get "colors.fg" "#cdd6f4") ;;
+                                border)         var_value=$(ini_get "colors.accent" "#89b4fa") ;;
+                                border_size)    var_value=$(ini_get "ocws.border" "2") ;;
+                                border_radius)  var_value=$(ini_get "ocws.radius" "8") ;;
+                                font)           var_value=$(ini_get "fonts.interface" "Noto Sans 10") ;;
+                                width)          var_value="350" ;;
+                                max_visible)    var_value="5" ;;
+                                default_timeout) var_value="5000" ;;
+                                *)              var_value=$(ini_get "mako.${key}" "") ;;
+                            esac
                         elif [[ "$var_name" == CONTOUR_* ]]; then
                             local key="${var_name#CONTOUR_}"
                             key="${key,,}"
@@ -289,6 +337,16 @@ render_template() {
                                 bright_7)  var_value=$(ini_get "colors.text" "#cdd6f4") ;;
                                 *) var_value="" ;;
                             esac
+                        elif [[ "$var_name" == TMUX_* ]]; then
+                            local key="${var_name#TMUX_}"
+                            key="${key,,}"
+                            case "$key" in
+                                status_bg)    var_value=$(ini_get "tmux.status_bg" "#1e1e2e") ;;
+                                status_fg)    var_value=$(ini_get "tmux.status_fg" "#cdd6f4") ;;
+                                accent)       var_value=$(ini_get "tmux.accent" "#89b4fa") ;;
+                                accent_fg)    var_value=$(ini_get "tmux.accent_fg" "#1e1e2e") ;;
+                                *) var_value="" ;;
+                            esac
                         elif [[ "$var_name" == QT_* ]]; then
                             local key="${var_name#QT_}"
                             var_value=$(ini_get "qt6ct.${key,,}" "")
@@ -313,10 +371,44 @@ render_template() {
                             var_value=$(ini_get "colors.${key,,}" "")
                         elif [[ "$var_name" == BG_ALPHA || "$var_name" == SURFACE_ALPHA || "$var_name" == BORDER_ALPHA ]]; then
                             :
-                        elif [[ "$var_name" == FONT_SIZE || "$var_name" == FONT_SIZE_SMALL || "$var_name" == MODULE_* ]]; then
+                        elif [[ "$var_name" == FONT_SIZE || "$var_name" == FONT_SIZE_SMALL || "$var_name" == FONT_SIZE_LARGE || "$var_name" == MODULE_* ]]; then
                             var_value=$(ini_get "sfwbar.${var_name,,}" "")
+                            if [[ -z "$var_value" ]]; then
+                                case "${var_name,,}" in
+                                    font_size)       var_value="12px" ;;
+                                    font_size_small) var_value="11px" ;;
+                                    font_size_large) var_value="13px" ;;
+                                    module_font_family) var_value="'FiraCode Nerd Font','Noto Sans','DejaVu Sans',sans-serif" ;;
+                                esac
+                            fi
                         elif [[ "$var_name" == CORNER_RADIUS ]]; then
                             var_value=$(ini_get "labwc.cornerRadius" "8")
+                        elif [[ "$var_name" == DMS_* ]]; then
+                            local key="${var_name#DMS_}"
+                            key="${key,,}"
+                            case "$key" in
+                                theme_name)         var_value=$(ini_get "dms.theme_name" "blue") ;;
+                                matugen_scheme)     var_value=$(ini_get "dms.matugen_scheme" "scheme-tonal-spot") ;;
+                                corner_radius)      var_value=$(ini_get "labwc.cornerRadius" "12") ;;
+                                popup_transparency) var_value=$(ini_get "dms.popup_transparency" "1") ;;
+                                dock_transparency)  var_value=$(ini_get "dms.dock_transparency" "1") ;;
+                                blur_enabled)       var_value=$(ini_get "dms.blur_enabled" "false") ;;
+                                blur_border_color)  var_value=$(ini_get "colors.overlay0" "#6c7086") ;;
+                                icon_theme)         var_value=$(ini_get "gtk3.icon_theme" "Papirus-Dark") ;;
+                                cursor_theme)       var_value=$(ini_get "cursor.theme" "Catppuccin-Mocha-Dark") ;;
+                                cursor_size)        var_value=$(ini_get "cursor.size" "24") ;;
+                                font_family)        var_value=$(ini_get "fonts.interface" "Noto Sans") ;;
+                                mono_font)          var_value=$(ini_get "fonts.monospace" "Noto Sans Mono") ;;
+                                *) var_value="" ;;
+                            esac
+                        elif [[ "$var_name" == NOCTALIA_* ]]; then
+                            local key="${var_name#NOCTALIA_}"
+                            key="${key,,}"
+                            case "$key" in
+                                dock_pinned) var_value='["org.gnome.Software","blender","org.inkscape.Inkscape","drawio","org.kde.dolphin","org.gnome.Nautilus","chromium_chromium","code","com.mitchellh.ghostty","firefox_firefox","brave-browser","foot"]' ;;
+                                location)   var_value=$(ini_get "noctalia.location" "Madiun, East Java") ;;
+                                *) var_value="" ;;
+                            esac
                         else
                             warn "Unknown template variable: {{$var_name}}"
                         fi
@@ -335,10 +427,13 @@ render_template() {
                 COLOR_URGENT)  var_value="#f38ba8" ;;
                 COLOR_OK)      var_value="#a6e3a1" ;;
                 COLOR_MUTED)   var_value="#a6adc8" ;;
+                COLOR_*)       var_value="#1e1e2e" ;;
                 OCWS_BLUR)     var_value="5" ;;
                 OCWS_BORDER)   var_value="1" ;;
                 OCWS_RADIUS)   var_value="8" ;;
                 OCWS_SHADOW)   var_value="4" ;;
+                ICON_THEME)    var_value="elementary" ;;
+                FONT_INTERFACE) var_value="Noto Sans" ;;
             esac
         fi
         content="${content//\{\{$var_name\}\}/$var_value}"
@@ -355,19 +450,27 @@ render_template() {
 declare -A OUTPUT_MAP=(
     [gtk.css.tmpl]="$HOME/.config/gtk-3.0/gtk.css"
     [gtk4.css.tmpl]="$HOME/.config/gtk-4.0/gtk.css"
+    [gtk2-rc.tmpl]="$HOME/.gtkrc-2.0"
     [gtk3-settings.ini.tmpl]="$HOME/.config/gtk-3.0/settings.ini"
     [gtk4-settings.ini.tmpl]="$HOME/.config/gtk-4.0/settings.ini"
     [themerc-override.tmpl]="$HOME/.config/labwc/themerc-override"
     [environment.tmpl]="$HOME/.config/labwc/environment"
-    [sfwbar.css.tmpl]="$HOME/.config/ocws/theme.css"
-    [tokens.css.tmpl]="$HOME/.config/ocws/tokens.css"
+    [sfwbar.css.tmpl]="$HOME/.config/ocws/css/theme.css"
+    [tokens.css.tmpl]="$HOME/.config/ocws/css/tokens.css"
     [rofi.rasi.tmpl]="$HOME/.config/rofi/config.rasi"
     [fuzzel.ini.tmpl]="$HOME/.config/fuzzel/fuzzel.ini"
     [mako.ini.tmpl]="$HOME/.config/mako/config"
     [foot.ini.tmpl]="$HOME/.config/foot/foot.ini"
     [contour.yml.tmpl]="$HOME/.config/contour/contour.yml"
+    [crystal-dock-appearance.conf.tmpl]="$HOME/.config/crystal-dock/appearance.conf"
+    [tmux.conf.tmpl]="$HOME/.tmux.conf"
     [qt6ct.conf.tmpl]="$HOME/.config/qt6ct/qt6ct.conf"
-    [ocws.css.tmpl]="$HOME/.config/ocws/ocws.css"
+    [dms-settings.json.tmpl]="$HOME/.config/DankMaterialShell/settings.json"
+    [noctalia.toml.tmpl]="$HOME/.config/noctalia/config.toml"
+    [firefox-userChrome.css.tmpl]="$HOME/.config/ocws/firefox/userChrome.css"
+    [ocws.css.tmpl]="$HOME/.config/ocws/css/ocws.css"
+    [spicetify.ini.tmpl]="$HOME/.config/spicetify/Themes/OCWS/color.ini"
+    [vencord.css.tmpl]="$HOME/.config/vesktop/settings/quickCss.css"
 )
 
 # ============================================================
@@ -458,6 +561,15 @@ cmd_apply() {
         applied=$((applied + 1))
     fi
 
+    # GTK2 settings
+    local gtk2_ini
+    gtk2_ini=$(render_template "$TEMPLATES_DIR/gtk2-rc.tmpl")
+    if [[ -n "$gtk2_ini" ]]; then
+        echo "$gtk2_ini" > "$HOME/.gtkrc-2.0"
+        pass "GTK2 .gtkrc-2.0"
+        applied=$((applied + 1))
+    fi
+
     # GTK3 settings.ini
     local gtk3_ini
     gtk3_ini=$(render_template "$TEMPLATES_DIR/gtk3-settings.ini.tmpl")
@@ -508,11 +620,18 @@ cmd_apply() {
         # Update cornerRadius
         sed -i "s|<cornerRadius>[^<]*</cornerRadius>|<cornerRadius>${corner_radius}</cornerRadius>|" "$rc_xml"
 
-        # Update titlebar font name and size (ActiveWindow)
-        sed -i "/<font place=\"ActiveWindow\">/,/<\/font>/{
-            s|<name>[^<]*</name>|<name>${themerc_font_name}</name>|
-            s|<size>[^<]*</size>|<size>${themerc_font_size}</size>|
-        }" "$rc_xml"
+        # Update titlebar font name and size (all 4 places)
+        for place in ActiveWindow InactiveWindow MenuHeader MenuItem; do
+            sed -i "/<font place=\"$place\">/,/<\/font>/{
+                s|<name>[^<]*</name>|<name>${themerc_font_name}</name>|
+                s|<size>[^<]*</size>|<size>${themerc_font_size}</size>|
+            }" "$rc_xml"
+        done
+
+        # Update theme name
+        local theme_name
+        theme_name=$(ini_get "meta.name" "ocws-catppuccin-mocha")
+        sed -i "s|<name>[^<]*</name>|<name>${theme_name}</name>|" "$rc_xml"
 
         pass "labwc rc.xml synced (cornerRadius=${corner_radius}, font=${themerc_font_name} ${themerc_font_size})"
         applied=$((applied + 1))
@@ -593,12 +712,97 @@ cmd_apply() {
         applied=$((applied + 1))
     fi
 
-    # Qt
+    # Crystal Dock
+    local cd_conf
+    cd_conf=$(render_template "$TEMPLATES_DIR/crystal-dock-appearance.conf.tmpl")
+    if [[ -n "$cd_conf" ]]; then
+        mkdir -p "$HOME/.config/crystal-dock"
+        echo "$cd_conf" > "$HOME/.config/crystal-dock/appearance.conf"
+        pass "crystal-dock appearance.conf"
+        applied=$((applied + 1))
+    fi
+
+    # Tmux
+    local tmux_conf
+    tmux_conf=$(render_template "$TEMPLATES_DIR/tmux.conf.tmpl")
+    if [[ -n "$tmux_conf" ]]; then
+        echo "$tmux_conf" > "$HOME/.tmux.conf"
+        pass "tmux.conf"
+        applied=$((applied + 1))
+    fi
+
+    # Qt (Qt5 and Qt6)
     local qt_conf
     qt_conf=$(render_template "$TEMPLATES_DIR/qt6ct.conf.tmpl")
     if [[ -n "$qt_conf" ]]; then
+        mkdir -p "$HOME/.config/qt6ct" "$HOME/.config/qt5ct"
         echo "$qt_conf" > "$HOME/.config/qt6ct/qt6ct.conf"
-        pass "qt6ct.conf"
+        echo "$qt_conf" > "$HOME/.config/qt5ct/qt5ct.conf"
+        pass "qt6ct.conf & qt5ct.conf"
+        applied=$((applied + 1))
+    fi
+
+    # DankMaterialShell
+    local dms_conf
+    dms_conf=$(render_template "$TEMPLATES_DIR/dms-settings.json.tmpl")
+    if [[ -n "$dms_conf" ]]; then
+        mkdir -p "$HOME/.config/DankMaterialShell"
+        echo "$dms_conf" > "$HOME/.config/DankMaterialShell/settings.json"
+        pass "DankMaterialShell settings.json"
+        applied=$((applied + 1))
+    fi
+
+    # Noctalia
+    local noctalia_conf
+    noctalia_conf=$(render_template "$TEMPLATES_DIR/noctalia.toml.tmpl")
+    if [[ -n "$noctalia_conf" ]]; then
+        mkdir -p "$HOME/.config/noctalia"
+        echo "$noctalia_conf" > "$HOME/.config/noctalia/config.toml"
+        pass "Noctalia config.toml"
+        applied=$((applied + 1))
+    fi
+
+    # Firefox userChrome.css (central copy, symlink to profiles)
+    local firefox_css
+    firefox_css=$(render_template "$TEMPLATES_DIR/firefox-userChrome.css.tmpl")
+    if [[ -n "$firefox_css" ]]; then
+        mkdir -p "$HOME/.config/ocws/firefox"
+        echo "$firefox_css" > "$HOME/.config/ocws/firefox/userChrome.css"
+        pass "Firefox userChrome.css"
+        applied=$((applied + 1))
+
+        # Auto-install to Firefox profiles if they exist
+        local profiles_ini="$HOME/.mozilla/firefox/profiles.ini"
+        if [[ -f "$profiles_ini" ]]; then
+            while IFS= read -r line; do
+                if [[ "$line" =~ ^Path=(.+)$ ]]; then
+                    local profile_path="$HOME/.mozilla/firefox/${BASH_REMATCH[1]}"
+                    if [[ -d "$profile_path" ]]; then
+                        mkdir -p "$profile_path/chrome"
+                        cp "$HOME/.config/ocws/firefox/userChrome.css" "$profile_path/chrome/userChrome.css"
+                    fi
+                fi
+            done < "$profiles_ini"
+        fi
+    fi
+
+    # Spicetify
+    local spicetify_ini
+    spicetify_ini=$(render_template "$TEMPLATES_DIR/spicetify.ini.tmpl")
+    if [[ -n "$spicetify_ini" ]]; then
+        mkdir -p "$HOME/.config/spicetify/Themes/OCWS"
+        echo "$spicetify_ini" > "$HOME/.config/spicetify/Themes/OCWS/color.ini"
+        pass "Spicetify color.ini"
+        applied=$((applied + 1))
+    fi
+
+    # Vencord / Vesktop
+    local vencord_css
+    vencord_css=$(render_template "$TEMPLATES_DIR/vencord.css.tmpl")
+    if [[ -n "$vencord_css" ]]; then
+        mkdir -p "$HOME/.config/vesktop/settings"
+        echo "$vencord_css" > "$HOME/.config/vesktop/settings/quickCss.css"
+        pass "Vesktop quickCss.css"
         applied=$((applied + 1))
     fi
 
@@ -609,6 +813,35 @@ cmd_apply() {
         pass "Widget profile set to: $profile"
         applied=$((applied + 1))
     fi
+    # Live Reloading and Integration
+    echo ""
+    echo -e "${BOLD}Applying live updates...${NC}"
+
+    if command -v gsettings >/dev/null 2>&1; then
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+        pass "Libadwaita set to prefer-dark"
+    fi
+
+    if command -v labwc >/dev/null 2>&1 && pgrep labwc >/dev/null; then
+        labwc reconfigure
+        pass "Live reloaded labwc"
+    fi
+
+    if command -v makoctl >/dev/null 2>&1 && pgrep mako >/dev/null; then
+        makoctl reload
+        pass "Live reloaded mako"
+    fi
+
+    if pgrep sfwbar >/dev/null; then
+        killall -SIGUSR1 sfwbar 2>/dev/null || true
+        pass "Live reloaded sfwbar"
+    fi
+
+    if command -v spicetify >/dev/null 2>&1; then
+        spicetify apply >/dev/null 2>&1 || true
+        pass "Live reloaded Spicetify"
+    fi
+    
     fi # !labwc_only
 
     echo ""
@@ -735,15 +968,67 @@ if [[ "$#" -lt 1 ]]; then
     echo "  current                 Show active theme"
     echo "  export <theme.ini>      Export generated files to dotfiles/"
     echo "  profile <standard|full> Switch widget set profile"
+    echo "  extract <image> [name]  Extract color palette from wallpaper"
     exit 1
 fi
 
 cmd="$1"
 shift
 
+cmd_extract() {
+    local image_path="$1"
+    local output_name="${2:-wallpaper-auto}"
+    
+    [[ -n "$image_path" ]] || fail "Usage: $0 extract <wallpaper.jpg> [theme_name]"
+    [[ -f "$image_path" ]] || fail "Image not found: $image_path"
+    
+    echo -e "${BOLD}Extracting palette from: $image_path${NC}"
+    
+    local out_file="$THEMES_DIR/${output_name}.ini"
+    
+    if command -v wal >/dev/null 2>&1; then
+        wal -i "$image_path" -n -q
+        if [[ -f "$HOME/.cache/wal/colors.sh" ]]; then
+            # We must load variables carefully
+            (
+                source "$HOME/.cache/wal/colors.sh"
+                cat > "$out_file" <<EOF
+[meta]
+name = Auto-generated from wallpaper
+description = Generated via pywal
+author = theme-engine
+
+[colors]
+bg = $background
+fg = $foreground
+accent = $color4
+surface = $color0
+border = $color8
+urgent = $color1
+ok = $color2
+muted = $color7
+
+[ocws]
+blur = 5
+border = 1
+radius = 8
+shadow = 4
+EOF
+            )
+            pass "Generated $out_file using pywal!"
+            return 0
+        fi
+    fi
+    
+    warn "No compatible extraction tool found (pywal recommended). Outputting default template."
+}
+
 case "$cmd" in
     apply)
         cmd_apply "$@"
+        ;;
+    extract)
+        cmd_extract "$@"
         ;;
     preview)
         cmd_preview "$@"

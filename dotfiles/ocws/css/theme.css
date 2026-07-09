@@ -1,23 +1,23 @@
 /* SFWBar — Regular full-width panel theme
  * Theme: Catppuccin Mocha */
 
-@define-color bg_color #1e1e2e;
-@define-color fg_color #cdd6f4;
-@define-color theme_bg_color #1e1e2e;
-@define-color theme_fg_color #cdd6f4;
-@define-color theme_text_color #cdd6f4;
-@define-color surface1 #1e1e2e;
+@define-color bg_color @theme_bg_color;
+@define-color fg_color @theme_text_color;
+@define-color theme_bg_color @theme_bg_color;
+@define-color theme_fg_color @theme_text_color;
+@define-color theme_text_color @theme_text_color;
+@define-color surface1 @theme_bg_color;
 @define-color surface2 #45475a;
-@define-color accent #89b4fa;
-@define-color urgent #f38ba8;
-@define-color success #a6e3a1;
+@define-color accent @accent;
+@define-color urgent @urgent;
+@define-color success @success;
 
 /* ============================================================
  * Base — regular full-width panel
  * ============================================================ */
 
 window#topbar, window#bottombar {
-  background-color: alpha(#1e1e2e, 0.92);
+  background-color: @theme_bg_color;
   box-shadow: none;
   min-height: 36px;
 }
@@ -27,20 +27,20 @@ grid#layout, grid#topbar {
   border-radius: 0px;
   margin: 0px;
   padding: 0px 8px;
-  border-bottom: 1px solid alpha(#45475a, 0.3);
+  border-bottom: 1px solid #45475a;
 }
 
 grid#bottombar {
-  background-color: alpha(#1e1e2e, 0.85);
+  background-color: @theme_bg_color;
   border-radius: 0px;
   margin: 0px;
   padding: 0px 8px;
-  border-top: 1px solid alpha(#45475a, 0.3);
+  border-top: 1px solid #45475a;
 }
 
 * {
   background-color: transparent;
-  color: #cdd6f4;
+  color: @theme_text_color;
   font-family: 'FiraCode Nerd Font', 'Noto Sans', 'DejaVu Sans', sans-serif;
 }
 
@@ -55,32 +55,32 @@ button, button image {
   background-image: none;
   border-image: none;
   background-color: transparent;
-  color: #cdd6f4;
+  color: @theme_text_color;
 }
 
 window#switcher {
-  background-color: alpha(#1e1e2e, 0.95);
-  color: #cdd6f4;
-  border: 1px solid alpha(#45475a, 0.4);
+  background-color: @theme_bg_color;
+  color: @theme_text_color;
+  border: 1px solid #45475a;
   border-radius: 10px;
   padding: 40px;
   -GtkWidget-hexpand: true;
 }
 
 grid#switcher_item label {
-  color: #cdd6f4;
+  color: @theme_text_color;
 }
 
 label {
   font-family: 'FiraCode Nerd Font', 'Noto Sans', 'DejaVu Sans', sans-serif;
   font-size: 12px;
-  color: #cdd6f4;
+  color: @theme_text_color;
   background-color: transparent;
 }
 
 image {
   -ScaleImage-symbolic: true;
-  color: #cdd6f4;
+  color: @theme_text_color;
 }
 
 .module {
@@ -92,15 +92,15 @@ image {
 }
 
 .module:hover {
-  background-color: alpha(#1e1e2e, 0.5);
+  background-color: @theme_bg_color;
 }
 
 .focused {
-  background-color: alpha(#89b4fa, 0.2);
+  background-color: @accent;
 }
 
 .urgent label {
-  color: #f38ba8;
+  color: @urgent;
 }
 
 /* Module buttons — circular pill style */
@@ -108,7 +108,7 @@ button.module {
   padding: 4px 6px;
   border-radius: 6px;
   background-color: transparent;
-  color: #cdd6f4;
+  color: @theme_text_color;
   margin: 0px 2px;
   min-width: 24px;
   min-height: 24px;
@@ -117,11 +117,11 @@ button.module {
 }
 
 button.module:hover {
-  background-color: alpha(#1e1e2e, 0.5);
+  background-color: @theme_bg_color;
 }
 
 button.module:active {
-  background-color: alpha(#1e1e2e, 0.7);
+  background-color: @theme_bg_color;
 }
 
 /* ============================================================
@@ -134,7 +134,7 @@ label#clock {
   padding: 4px 12px;
   -GtkWidget-vexpand: true;
   -GtkWidget-valign: center;
-  color: #cdd6f4;
+  color: @theme_text_color;
 }
 
 /* ============================================================
@@ -143,7 +143,7 @@ label#clock {
 
 grid#pager {
   border-radius: 6px;
-  border-color: alpha(#45475a, 0.3);
+  border-color: #45475a;
   border-style: solid;
   border-width: 1px;
   margin: 4px;
@@ -168,16 +168,16 @@ button#pager_item label {
 }
 
 button#pager_item.active label {
-  color: #cdd6f4;
+  color: @theme_text_color;
   font-weight: bold;
 }
 
 button#pager_item.occupied label {
-  color: alpha(#cdd6f4, 0.6);
+  color: @theme_text_color;
 }
 
 button#pager_item:hover {
-  background-color: alpha(#1e1e2e, 0.5);
+  background-color: @theme_bg_color;
 }
 
 /* ============================================================
@@ -194,16 +194,16 @@ button.taskbar_item {
 }
 
 button.taskbar_item:hover {
-  background-color: alpha(#1e1e2e, 0.5);
+  background-color: @theme_bg_color;
 }
 
 button.taskbar_item.focused {
-  background-color: alpha(#89b4fa, 0.2);
-  border-bottom: 2px solid #89b4fa;
+  background-color: @accent;
+  border-bottom: 2px solid @accent;
 }
 
 button.taskbar_item.urgent {
-  background-color: alpha(#f38ba8, 0.2);
+  background-color: @urgent;
 }
 
 /* ============================================================
@@ -219,8 +219,8 @@ grid.detail_grid {
   margin: 5px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid alpha(#45475a, 0.4);
-  background-color: alpha(#1e1e2e, 0.95);
+  border: 1px solid #45475a;
+  background-color: @theme_bg_color;
   -GtkWidget-direction: bottom;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -228,25 +228,25 @@ grid.detail_grid {
 label.detail_header {
   font-size: 13px;
   font-weight: bold;
-  color: #89b4fa;
+  color: @accent;
   padding-bottom: 8px;
-  border-bottom: 1px solid alpha(#1e1e2e, 0.6);
+  border-bottom: 1px solid @theme_bg_color;
   -GtkWidget-hexpand: true;
 }
 
 label.detail_value {
   font-family: 'Noto Sans Mono', monospace;
   font-size: 12px;
-  color: #cdd6f4;
+  color: @theme_text_color;
   padding: 8px 0px;
   -GtkWidget-hexpand: true;
 }
 
 label.detail_hint {
   font-size: 10px;
-  color: alpha(#cdd6f4, 0.6);
+  color: @theme_text_color;
   padding-top: 6px;
-  border-top: 1px solid alpha(#1e1e2e, 0.6);
+  border-top: 1px solid @theme_bg_color;
   -GtkWidget-hexpand: true;
 }
 
@@ -258,15 +258,15 @@ grid.detail_button_row {
 grid.detail_button_row button {
   padding: 4px 8px;
   margin: 2px;
-  border: 1px solid alpha(#45475a, 0.4);
+  border: 1px solid #45475a;
   border-radius: 6px;
-  background-color: alpha(#1e1e2e, 0.3);
-  color: #cdd6f4;
+  background-color: @theme_bg_color;
+  color: @theme_text_color;
 }
 
 grid.detail_button_row button:hover {
-  background-color: alpha(#1e1e2e, 0.5);
-  border-color: #89b4fa;
+  background-color: @theme_bg_color;
+  border-color: @accent;
 }
 
 scale.detail_slider {
@@ -277,14 +277,14 @@ scale.detail_slider {
 progressbar.detail_progress trough {
   min-height: 6px;
   border-radius: 3px;
-  background-color: alpha(#1e1e2e, 0.4);
-  border: 1px solid alpha(#45475a, 0.3);
+  background-color: @theme_bg_color;
+  border: 1px solid #45475a;
 }
 
 progressbar.detail_progress progress {
   min-height: 6px;
   border-radius: 3px;
-  background-color: #a6e3a1;
+  background-color: @success;
 }
 
 /* ============================================================
@@ -324,9 +324,9 @@ grid#SessionPopup {
   -GtkWidget-hexpand: true;
   margin: 5px;
   border-radius: 10px;
-  border: 1px solid alpha(#45475a, 0.4);
+  border: 1px solid #45475a;
   padding: 10px;
-  background-color: alpha(#1e1e2e, 0.95);
+  background-color: @theme_bg_color;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -345,14 +345,14 @@ button.ws_button {
   border-radius: 6px;
   padding: 4px;
   margin: 2px;
-  background-color: alpha(#1e1e2e, 0.4);
-  color: alpha(#cdd6f4, 0.6);
+  background-color: @theme_bg_color;
+  color: @theme_text_color;
   font-size: 11px;
 }
 
 button.ws_button:hover {
-  background-color: alpha(#1e1e2e, 0.6);
-  color: #cdd6f4;
+  background-color: @theme_bg_color;
+  color: @theme_text_color;
 }
 
 /* ============================================================
@@ -360,15 +360,15 @@ button.ws_button:hover {
  * ============================================================ */
 
 tooltip {
-  background-color: alpha(#1e1e2e, 0.95);
-  color: #cdd6f4;
+  background-color: @theme_bg_color;
+  color: @theme_text_color;
   border-radius: 6px;
-  border: 1px solid alpha(#45475a, 0.4);
+  border: 1px solid #45475a;
   padding: 6px 10px;
 }
 
 tooltip label {
-  color: #cdd6f4;
+  color: @theme_text_color;
   font-size: 11px;
 }
 

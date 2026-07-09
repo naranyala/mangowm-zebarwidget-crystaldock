@@ -183,7 +183,7 @@ label#notification_header {
   -GtkWidget-hexpand: true;
   -GtkWidget-vexpand: false;
   -GtkWidget-halign: start;
-  color: #89b4fa;
+  color: @accent;
 }
 
 label#notification_freespace {
@@ -194,7 +194,7 @@ grid#notification_grid_header,
 grid#notification_grid {
   border: none;
   border-radius: 10px;
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: alpha(@surface2, 0.4);
   margin-bottom: 3px;
   -GtkWidget-hexpand: true;
   -GtkWidget-vexpand: false;
@@ -219,7 +219,7 @@ image#notification_icon {
 
 image#notification_close {
   border-radius: 50%;
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: alpha(@surface2, 0.4);
   min-height: 16px;
   min-width: 16px;
   margin: 3px;
@@ -246,7 +246,7 @@ label#notification_time {
 grid#notification_count_grid {
   border-radius: 8px;
   min-height: 16px;
-  background-color: rgba(69, 71, 90, 0.4);
+  background-color: alpha(@surface2, 0.4);
   margin: 3px;
 }
 

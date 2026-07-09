@@ -8,6 +8,8 @@
 #include <fftw3.h>
 #include "../libocws/gtk.h"
 #include "../libocws/background_app.h"
+#include <pulse/simple.h>
+#include <pulse/error.h>
 
 // 10-Band EQ Frequencies
 const char *freq_labels[] = {"32", "64", "125", "250", "500", "1K", "2K", "4K", "8K", "16K"};

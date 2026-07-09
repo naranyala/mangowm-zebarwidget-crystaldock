@@ -168,7 +168,7 @@ image.media_album_art {
 label.media_track_title {
   font-size: 14px;
   font-weight: bold;
-  color: #cdd6f4;
+  color: @theme_text_color;
   -GtkWidget-halign: center;
   -GtkWidget-hexpand: true;
   padding-bottom: 2px;
@@ -176,7 +176,7 @@ label.media_track_title {
 
 label.media_track_artist {
   font-size: 11px;
-  color: #a6adc8;
+  color: alpha(@theme_text_color, 0.7);
   -GtkWidget-halign: center;
   -GtkWidget-hexpand: true;
   padding-bottom: 10px;
@@ -190,7 +190,7 @@ grid.media_progress_row {
 
 label.media_time_label {
   font-size: 10px;
-  color: #6c7086;
+  color: alpha(@theme_text_color, 0.4);
   font-family: monospace;
   min-width: 80px;
 }
@@ -212,11 +212,11 @@ button.media_ctrl_btn {
   min-width: 36px;
   min-height: 36px;
   margin: 0 6px;
-  background-color: rgba(69,71,90,0.5);
-  color: #cdd6f4;
+  background-color: alpha(@surface2, 0.5);
+  color: @theme_text_color;
 }
 button.media_ctrl_btn:hover {
-  background-color: rgba(69,71,90,0.8);
+  background-color: alpha(@surface2, 0.8);
 }
 
 button.media_ctrl_btn_primary {
@@ -224,12 +224,12 @@ button.media_ctrl_btn_primary {
   min-width: 46px;
   min-height: 46px;
   margin: 0 6px;
-  background-color: rgba(137,180,250,0.25);
-  color: #89b4fa;
-  border: 1px solid rgba(137,180,250,0.4);
+  background-color: alpha(@accent, 0.25);
+  color: @accent;
+  border: 1px solid alpha(@accent, 0.4);
 }
 button.media_ctrl_btn_primary:hover {
-  background-color: rgba(137,180,250,0.4);
+  background-color: alpha(@accent, 0.4);
 }
 
 grid.media_volume_row {
@@ -240,7 +240,7 @@ grid.media_volume_row {
 
 label.media_vol_icon {
   font-size: 14px;
-  color: #a6adc8;
+  color: alpha(@theme_text_color, 0.7);
   min-width: 22px;
 }
 
@@ -251,7 +251,7 @@ scale.media_vol_slider {
 
 label.media_vol_pct {
   font-size: 10px;
-  color: #6c7086;
+  color: alpha(@theme_text_color, 0.4);
   font-family: monospace;
   min-width: 34px;
 }

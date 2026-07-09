@@ -204,7 +204,7 @@ done
 header "5/12" "Runtime Dependencies"
 
 # Critical tools
-for cmd in foot rofi wl-copy wl-paste grim slurp jq; do
+for cmd in contour foot rofi wl-copy wl-paste grim slurp jq; do
     if command -v "$cmd" &>/dev/null; then
         pass "$cmd: $(command -v $cmd)"
     else
@@ -282,7 +282,7 @@ for file in "$LABWC_DIR/rc.xml" "$LABWC_DIR/autostart" "$LABWC_DIR/environment" 
 done
 
 # Other tool configs
-for file in "$HOME/.config/foot/foot.ini" "$HOME/.config/rofi/config.rasi" "$HOME/.config/mako/config" "$HOME/.config/swaylock/config"; do
+for file in "$HOME/.config/contour/contour.yml" "$HOME/.config/foot/foot.ini" "$HOME/.config/rofi/config.rasi" "$HOME/.config/mako/config" "$HOME/.config/swaylock/config"; do
     if [[ -f "$file" ]]; then
         pass "$(basename $file)"
     else

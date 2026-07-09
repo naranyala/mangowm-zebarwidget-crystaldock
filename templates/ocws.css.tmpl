@@ -2,12 +2,22 @@
  * Theme: {{THEME_NAME}}
  * Valid GTK3 CSS only */
 
+@define-color theme_bg_color {{COLOR_BG}};
+@define-color theme_fg_color {{COLOR_FG}};
+@define-color theme_text_color {{COLOR_FG}};
+@define-color surface1 {{COLOR_SURFACE1}};
+@define-color surface2 {{COLOR_SURFACE2}};
+@define-color accent {{COLOR_ACCENT}};
+@define-color urgent {{COLOR_URGENT}};
+@define-color success {{COLOR_OK}};
+@define-color widget_alpha {{BG_ALPHA}};
+
 /* ============================================================
  * OCWS Glass Surface — Core shell panels
  * ============================================================ */
 
 window#topbar, window#bottombar {
-  background-color: alpha({{COLOR_BG}}, 0.92);
+  background-color: {{COLOR_BG}};
   border-radius: 0px;
   border: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -20,15 +30,15 @@ grid#layout, grid#topbar {
   background-color: transparent;
   margin: 0px;
   padding: 0px 8px;
-  border-bottom: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-bottom: 1px solid {{COLOR_BORDER}};
 }
 
 /* Bottom bar */
 grid#bottombar {
-  background-color: alpha({{COLOR_BG}}, 0.85);
+  background-color: {{COLOR_BG}};
   margin: 0px;
   padding: 0px 8px;
-  border-top: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-top: 1px solid {{COLOR_BORDER}};
 }
 
 /* ============================================================
@@ -36,9 +46,9 @@ grid#bottombar {
  * ============================================================ */
 
 window#switcher {
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   color: {{COLOR_FG}};
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   border-radius: 10px;
   padding: 40px;
   -GtkWidget-hexpand: true;
@@ -74,11 +84,11 @@ button.module {
 }
 
 button.module:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button.module:active {
-  background-color: alpha({{COLOR_ACCENT}}, 0.3);
+  background-color: {{COLOR_ACCENT}};
 }
 
 /* ============================================================
@@ -90,19 +100,19 @@ button.text_widget {
   margin: 1px 3px;
   border-radius: 6px;
   background-color: transparent;
-  color: alpha({{COLOR_FG}}, 0.7);
+  color: {{COLOR_FG}};
   min-width: 0px;
   min-height: 0px;
   font-size: 12px;
 }
 
 button.text_widget:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
 button.text_widget:active {
-  background-color: alpha({{COLOR_ACCENT}}, 0.2);
+  background-color: {{COLOR_ACCENT}};
 }
 
 button.text_clock {
@@ -118,7 +128,7 @@ button.text_clock {
 }
 
 button.text_clock:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button.text_media {
@@ -126,14 +136,14 @@ button.text_media {
   margin: 1px 3px;
   border-radius: 6px;
   background-color: transparent;
-  color: alpha({{COLOR_FG}}, 0.7);
+  color: {{COLOR_FG}};
   font-size: 12px;
   min-width: 0px;
   min-height: 0px;
 }
 
 button.text_media:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
@@ -142,7 +152,7 @@ button.text_metric {
   margin: 1px 3px;
   border-radius: 6px;
   background-color: transparent;
-  color: alpha({{COLOR_FG}}, 0.7);
+  color: {{COLOR_FG}};
   font-size: 11px;
   font-family: monospace;
   min-width: 0px;
@@ -150,7 +160,7 @@ button.text_metric {
 }
 
 button.text_metric:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
@@ -159,7 +169,7 @@ button.text_urgent {
 }
 
 button.text_urgent:hover {
-  background-color: alpha({{COLOR_URGENT}}, 0.15);
+  background-color: {{COLOR_URGENT}};
 }
 
 /* ============================================================
@@ -175,7 +185,7 @@ button#clock {
 }
 
 button#clock:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
 }
 
 /* ============================================================
@@ -187,23 +197,23 @@ button.taskbar_item {
   margin: 2px;
   border-radius: 6px;
   background-color: transparent;
-  color: alpha({{COLOR_FG}}, 0.7);
+  color: {{COLOR_FG}};
   font-size: 11px;
 }
 
 button.taskbar_item:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
 button.taskbar_item.focused {
-  background-color: alpha({{COLOR_ACCENT}}, 0.2);
+  background-color: {{COLOR_ACCENT}};
   color: {{COLOR_FG}};
   border-bottom: 2px solid {{COLOR_ACCENT}};
 }
 
 button.taskbar_item.urgent {
-  background-color: alpha({{COLOR_URGENT}}, 0.2);
+  background-color: {{COLOR_URGENT}};
   color: {{COLOR_URGENT}};
 }
 
@@ -233,11 +243,11 @@ button#showdesktop {
 }
 
 button#showdesktop:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button#showdesktop:checked {
-  background-color: alpha({{COLOR_ACCENT}}, 0.2);
+  background-color: {{COLOR_ACCENT}};
 }
 
 /* ============================================================
@@ -252,7 +262,7 @@ button#dock {
 }
 
 button#dock:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
 }
 
 /* ============================================================
@@ -283,7 +293,7 @@ button#tray_item image {
 
 grid#pager {
   border-radius: 6px;
-  border-color: alpha({{COLOR_BORDER}}, 0.3);
+  border-color: {{COLOR_BORDER}};
   border-style: solid;
   border-width: 1px;
   margin: 4px;
@@ -306,20 +316,20 @@ button#pager_item {
 
 button#pager_item label {
   font-size: 11px;
-  color: alpha({{COLOR_FG}}, 0.3);
+  color: {{COLOR_FG}};
 }
 
 button#pager_item.occupied {
-  background-color: alpha({{COLOR_SURFACE}}, 0.3);
+  background-color: {{COLOR_SURFACE}};
 }
 
 button#pager_item.occupied label {
-  color: alpha({{COLOR_FG}}, 0.6);
+  color: {{COLOR_FG}};
 }
 
 button#pager_item.active {
-  background-color: alpha({{COLOR_ACCENT}}, 0.25);
-  border: 1px solid alpha({{COLOR_ACCENT}}, 0.4);
+  background-color: {{COLOR_ACCENT}};
+  border: 1px solid {{COLOR_ACCENT}};
 }
 
 button#pager_item.active label {
@@ -328,7 +338,7 @@ button#pager_item.active label {
 }
 
 button#pager_item:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
+  background-color: {{COLOR_SURFACE}};
 }
 
 /* ============================================================
@@ -344,8 +354,8 @@ grid.detail_grid {
   margin: 5px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  border: 1px solid {{COLOR_BORDER}};
+  background-color: {{COLOR_BG}};
   -GtkWidget-direction: bottom;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -355,7 +365,7 @@ label.detail_header {
   font-weight: bold;
   color: {{COLOR_ACCENT}};
   padding-bottom: 8px;
-  border-bottom: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-bottom: 1px solid {{COLOR_BORDER}};
   -GtkWidget-hexpand: true;
 }
 
@@ -369,9 +379,9 @@ label.detail_value {
 
 label.detail_hint {
   font-size: 10px;
-  color: alpha({{COLOR_FG}}, 0.6);
+  color: {{COLOR_FG}};
   padding-top: 6px;
-  border-top: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  border-top: 1px solid {{COLOR_BORDER}};
   -GtkWidget-hexpand: true;
 }
 
@@ -383,14 +393,14 @@ grid.detail_button_row {
 grid.detail_button_row button {
   padding: 4px 8px;
   margin: 2px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   border-radius: 6px;
-  background-color: alpha({{COLOR_BG}}, 0.3);
+  background-color: {{COLOR_BG}};
   color: {{COLOR_FG}};
 }
 
 grid.detail_button_row button:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.5);
+  background-color: {{COLOR_SURFACE}};
   border-color: {{COLOR_ACCENT}};
 }
 
@@ -402,8 +412,8 @@ scale.detail_slider {
 progressbar.detail_progress trough {
   min-height: 6px;
   border-radius: 3px;
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.3);
+  background-color: {{COLOR_SURFACE}};
+  border: 1px solid {{COLOR_BORDER}};
 }
 
 progressbar.detail_progress progress {
@@ -427,9 +437,9 @@ grid#SessionPopup {
   -GtkWidget-hexpand: true;
   margin: 5px;
   border-radius: 10px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   padding: 10px;
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -448,13 +458,13 @@ button.ws_button {
   border-radius: 6px;
   padding: 4px;
   margin: 2px;
-  background-color: alpha({{COLOR_SURFACE}}, 0.4);
-  color: alpha({{COLOR_FG}}, 0.6);
+  background-color: {{COLOR_SURFACE}};
+  color: {{COLOR_FG}};
   font-size: 11px;
 }
 
 button.ws_button:hover {
-  background-color: alpha({{COLOR_SURFACE}}, 0.6);
+  background-color: {{COLOR_SURFACE}};
   color: {{COLOR_FG}};
 }
 
@@ -463,10 +473,10 @@ button.ws_button:hover {
  * ============================================================ */
 
 tooltip {
-  background-color: alpha({{COLOR_BG}}, 0.95);
+  background-color: {{COLOR_BG}};
   color: {{COLOR_FG}};
   border-radius: 6px;
-  border: 1px solid alpha({{COLOR_BORDER}}, 0.4);
+  border: 1px solid {{COLOR_BORDER}};
   padding: 6px 10px;
 }
 

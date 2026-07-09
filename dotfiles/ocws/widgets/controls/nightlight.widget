@@ -23,7 +23,7 @@ export button "nightlight" {
     style = "pill_grid"
     image {
       value = "night-light-symbolic"
-      css = If($XNightLight = "on", "* { color: #fab387; }", "")
+      css = If($XNightLight = "on", "* { color: @accent; }", "")
     }
     label { value = "Night" }
   }

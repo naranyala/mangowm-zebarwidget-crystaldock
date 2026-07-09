@@ -40,7 +40,7 @@ ${BOLD}Commands:${NC}
 
 ${BOLD}Examples:${NC}
   $0 add flameshot --daemon     Add flameshot as daemon
-  $0 add foot                   Add foot terminal
+  $0 add contour               Add contour terminal
   $0 remove flameshot           Remove flameshot from autorun
   $0 disable flameshot          Disable (comment out) flameshot
   $0 enable flameshot           Re-enable flameshot

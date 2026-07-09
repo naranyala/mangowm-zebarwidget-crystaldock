@@ -21,7 +21,7 @@ button#showdesktop {
 }
 
 button#showdesktop:hover {
-  background-color: rgba(69, 71, 90, 0.5);
+  background-color: alpha(@surface2, 0.5);
 }
 
 button#showdesktop:checked {
