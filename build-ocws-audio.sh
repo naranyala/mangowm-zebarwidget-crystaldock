@@ -83,8 +83,11 @@ check_deps() {
     need_pkg libpulse-simple "libpulse-dev"
     need_pkg fftw3         "libfftw3-dev"
     need_pkg cairo         "libcairo2-dev"
-    # mbeq LADSPA plugin is the EQ engine; verify it exists on disk.
-    if ls "$PREFIX"/lib/ladspa/mbeq_1197.so "$PREFIX"/lib64/ladspa/mbeq_1197.so /usr/lib/ladspa/mbeq_1197.so 2>/dev/null | grep -q .; then
+    local found_mbeq=false
+    for p in "$PREFIX"/lib/ladspa/mbeq_1197.so "$PREFIX"/lib64/ladspa/mbeq_1197.so /usr/lib/ladspa/mbeq_1197.so /usr/lib64/ladspa/mbeq_1197.so; do
+        if [ -f "$p" ]; then found_mbeq=true; break; fi
+    done
+    if [ "$found_mbeq" = "true" ]; then
         pass "mbeq LADSPA plugin present"
     else
         warn "mbeq LADSPA plugin missing — building swh-plugins"

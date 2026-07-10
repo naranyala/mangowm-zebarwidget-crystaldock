@@ -337,6 +337,20 @@ render_template() {
                                 bright_7)  var_value=$(ini_get "colors.text" "#cdd6f4") ;;
                                 *) var_value="" ;;
                             esac
+                        elif [[ "$var_name" == NVIM_* ]]; then
+                            local key="${var_name#NVIM_}"
+                            key="${key,,}"
+                            case "$key" in
+                                theme_pkg)    var_value=$(ini_get "nvim.theme_pkg" "scottmckendry/cyberdream.nvim") ;;
+                                theme_name)   var_value=$(ini_get "nvim.theme_name" "cyberdream") ;;
+                                flavour)      var_value=$(ini_get "nvim.flavour" "") ;;
+                                bg)           var_value=$(ini_get "colors.base" "#1e1e2e") ;;
+                                fg)           var_value=$(ini_get "colors.text" "#cdd6f4") ;;
+                                accent)       var_value=$(ini_get "colors.blue" "#89b4fa") ;;
+                                muted)        var_value=$(ini_get "colors.overlay0" "#6c7086") ;;
+                                surface)      var_value=$(ini_get "colors.surface1" "#45475a") ;;
+                                *)            var_value=$(ini_get "nvim.${key}" "") ;;
+                            esac
                         elif [[ "$var_name" == TMUX_* ]]; then
                             local key="${var_name#TMUX_}"
                             key="${key,,}"
@@ -464,6 +478,7 @@ declare -A OUTPUT_MAP=(
     [contour.yml.tmpl]="$HOME/.config/contour/contour.yml"
     [crystal-dock-appearance.conf.tmpl]="$HOME/.config/crystal-dock/appearance.conf"
     [tmux.conf.tmpl]="$HOME/.tmux.conf"
+    [nvim.lua.tmpl]="$HOME/.config/nvim/init.lua"
     [qt6ct.conf.tmpl]="$HOME/.config/qt6ct/qt6ct.conf"
     [dms-settings.json.tmpl]="$HOME/.config/DankMaterialShell/settings.json"
     [noctalia.toml.tmpl]="$HOME/.config/noctalia/config.toml"
@@ -728,6 +743,16 @@ cmd_apply() {
     if [[ -n "$tmux_conf" ]]; then
         echo "$tmux_conf" > "$HOME/.tmux.conf"
         pass "tmux.conf"
+        applied=$((applied + 1))
+    fi
+
+    # Neovim
+    local nvim_lua
+    nvim_lua=$(render_template "$TEMPLATES_DIR/nvim.lua.tmpl")
+    if [[ -n "$nvim_lua" ]]; then
+        mkdir -p "$HOME/.config/nvim"
+        echo "$nvim_lua" > "$HOME/.config/nvim/init.lua"
+        pass "nvim/init.lua"
         applied=$((applied + 1))
     fi
 

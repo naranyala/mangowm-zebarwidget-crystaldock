@@ -34,6 +34,8 @@ if [[ "$ID" == "arch" || "${ID_LIKE:-}" == *"arch"* ]]; then
     DISTRO_FAMILY="arch"
 elif [[ "$ID" == "debian" || "$ID" == "ubuntu" || "${ID_LIKE:-}" == *"debian"* || "${ID_LIKE:-}" == *"ubuntu"* ]]; then
     DISTRO_FAMILY="debian"
+elif [[ "$ID" == "almalinux" || "$ID" == "rocky" || "$ID" == "rhel" || "$ID" == "centos" || "${ID_LIKE:-}" == *"almalinux"* || "${ID_LIKE:-}" == *"rhel"* || "${ID_LIKE:-}" == *"centos"* ]]; then
+    DISTRO_FAMILY="almalinux"
 elif [[ "$ID" == "fedora" || "${ID_LIKE:-}" == *"fedora"* ]]; then
     DISTRO_FAMILY="fedora"
 elif [[ "$ID" == "opensuse"* || "$ID" == "suse" || "${ID_LIKE:-}" == *"suse"* ]]; then
@@ -42,6 +44,8 @@ elif [[ "$ID" == "alpine" ]]; then
     DISTRO_FAMILY="alpine"
 elif [[ "$ID" == "void" ]]; then
     DISTRO_FAMILY="void"
+elif [[ "$ID" == "openmandriva" || "${ID_LIKE:-}" == *"openmandriva"* ]]; then
+    DISTRO_FAMILY="openmandriva"
 else
     fail "Unsupported distribution: $ID ($NAME). Please install dependencies manually."
 fi

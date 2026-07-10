@@ -2,7 +2,7 @@
 # ocws-check-requirements.sh — Pre-install requirements checker
 # Shows users exactly what they need before running install.sh
 
-set -euo pipefail
+set -uo pipefail
 
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
@@ -88,7 +88,7 @@ HAS_FUZZEL=false
 check "labwc (Wayland compositor)" "labwc" && HAS_LABWC=true
 check "sfwbar (status bar)" "sfwbar" && HAS_SFWBAR=true
 check "fuzzel (app launcher)" "fuzzel" && HAS_FUZZEL=true
-check "contour (terminal)" "contour"
+check "foot (terminal)" "foot"
 echo ""
 
 # ============================================================
@@ -152,6 +152,9 @@ if [[ $FAIL -gt 0 ]]; then
         fedora)
             echo -e "  ${GREEN}sudo dnf install labwc sfwbar fuzzel foot playerctl grim slurp wl-clipboard brightnessctl jq inotify-tools swaybg swayidle mako cliphist qt6ct gtk3-devel${NC}"
             ;;
+        almalinux|rocky|rhel|centos)
+            echo -e "  ${GREEN}Run: ./install-distribution.sh to auto-install and compile dependencies${NC}"
+            ;;
         opensuse*|suse)
             echo -e "  ${GREEN}sudo zypper install labwc sfwbar fuzzel foot playerctl grim slurp wl-clipboard brightnessctl jq inotify-tools swaybg swayidle mako cliphist qt6ct gtk3-devel${NC}"
             ;;
@@ -160,6 +163,9 @@ if [[ $FAIL -gt 0 ]]; then
             ;;
         void)
             echo -e "  ${GREEN}sudo xbps-install -S labwc sfwbar rofi-wayland foot mako qt6ct fuzzel playerctl wl-clipboard cliphist grim slurp jq brightnessctl inotify-tools swaybg swayidle${NC}"
+            ;;
+        openmandriva)
+            echo -e "  ${GREEN}pkexec dnf install labwc sfwbar fuzzel foot playerctl grim slurp wl-clipboard brightnessctl jq inotify-tools swaybg swayidle mako cliphist qt6ct xdotool imagemagick wireplumber bluez libnotify rsync flameshot fonts-ttf-dejavu adobe-source-code-pro-fonts git meson ninja pkgconf gcc gcc-c++ make cmake lib64glib2.0-devel lib64gtk+3.0-devel${NC}"
             ;;
         *)
             echo -e "  ${YELLOW}Unknown distro. Install these packages:${NC}"

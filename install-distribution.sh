@@ -42,6 +42,9 @@ case "$OS" in
     fedora)
         DISTRO_SCRIPT="$SCRIPT_DIR/distro/fedora.sh"
         ;;
+    almalinux|rocky|rhel|centos)
+        DISTRO_SCRIPT="$SCRIPT_DIR/distro/almalinux.sh"
+        ;;
     opensuse*|suse)
         DISTRO_SCRIPT="$SCRIPT_DIR/distro/suse.sh"
         ;;
@@ -51,12 +54,17 @@ case "$OS" in
     void)
         DISTRO_SCRIPT="$SCRIPT_DIR/distro/void.sh"
         ;;
+    openmandriva)
+        DISTRO_SCRIPT="$SCRIPT_DIR/distro/openmandriva.sh"
+        ;;
     *)
         # Fallback to ID_LIKE checks
         if echo "$OS_LIKE" | grep -q "arch"; then
             DISTRO_SCRIPT="$SCRIPT_DIR/distro/arch.sh"
         elif echo "$OS_LIKE" | grep -q "debian"; then
             DISTRO_SCRIPT="$SCRIPT_DIR/distro/debian.sh"
+        elif echo "$OS_LIKE" | grep -q "almalinux" || echo "$OS_LIKE" | grep -q "rhel" || echo "$OS_LIKE" | grep -q "centos"; then
+            DISTRO_SCRIPT="$SCRIPT_DIR/distro/almalinux.sh"
         elif echo "$OS_LIKE" | grep -q "fedora"; then
             DISTRO_SCRIPT="$SCRIPT_DIR/distro/fedora.sh"
         elif echo "$OS_LIKE" | grep -q "suse"; then
@@ -65,6 +73,8 @@ case "$OS" in
             DISTRO_SCRIPT="$SCRIPT_DIR/distro/alpine.sh"
         elif echo "$OS_LIKE" | grep -q "void"; then
             DISTRO_SCRIPT="$SCRIPT_DIR/distro/void.sh"
+        elif echo "$OS" | grep -q "openmandriva" || echo "$OS_LIKE" | grep -q "openmandriva"; then
+            DISTRO_SCRIPT="$SCRIPT_DIR/distro/openmandriva.sh"
         else
             fail "Unsupported distribution: $PRETTY_NAME. Please use quick install."
         fi

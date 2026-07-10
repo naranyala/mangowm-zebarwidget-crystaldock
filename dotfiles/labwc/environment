@@ -31,4 +31,4 @@ FREETYPE_PROPERTIES=truetype:interpreter-version=35
 QT_QPA_PLATFORMTHEME=qt6ct
 
 # Terminal
-TERMINAL=contour
+TERMINAL=foot

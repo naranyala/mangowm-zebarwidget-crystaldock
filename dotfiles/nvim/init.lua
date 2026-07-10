@@ -1,0 +1,398 @@
+--[[
+  OCWS Neovim Config — Single file
+  Alternatives-only stack: snacks, blink, mini.*, oil.
+--]]
+
+local vim = vim
+local fn = vim.fn
+local g = vim.g
+local opt = vim.opt
+local map = vim.keymap.set
+local api = vim.api
+
+-- Bootstrap lazy.nvim
+local lazypath = fn.stdpath("data") .. "/lazy/lazy.nvim"
+if fn.has("nvim-0.9") == 0 then
+  api.nvim_err_writeln("OCWS nvim config requires Neovim >= 0.9")
+  return
+end
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  fn.system({ "git", "clone", "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
+end
+opt.rtp:prepend(lazypath)
+
+-- Options
+opt.backup = false
+opt.swapfile = false
+opt.undofile = true
+opt.hlsearch = false
+opt.incsearch = true
+opt.ignorecase = true
+opt.smartcase = true
+opt.termguicolors = true
+opt.mousemodel = "extend"
+opt.hidden = true
+opt.splitright = true
+opt.splitbelow = true
+opt.scrolloff = 4
+opt.sidescrolloff = 8
+opt.signcolumn = "yes"
+opt.number = true
+opt.relativenumber = true
+opt.tabstop = 2
+opt.shiftwidth = 2
+opt.expandtab = true
+opt.smartindent = true
+opt.wrap = false
+opt.showmode = false
+opt.cmdheight = 0
+opt.updatetime = 250
+opt.timeoutlen = 300
+opt.shortmess:append({ c = true, I = true })
+
+-- Leader
+g.mapleader = " "
+g.maplocalleader = " "
+
+-- Keymaps
+map("n", "<Esc>", "<cmd>nohlsearch<CR>")
+map("n", "<leader>w", "<cmd>write<CR>")
+map("n", "<leader>q", "<cmd>q<CR>")
+map("n", "<leader>Q", "<cmd>qa<CR>")
+map("n", "<leader>e", "<cmd>Oil<CR>")
+map("n", "<leader>ff", function() require("snacks").picker.files() end)
+map("n", "<leader>fg", function() require("snacks").picker.grep() end)
+map("n", "<leader>fb", function() require("snacks").picker.buffers() end)
+map("n", "<leader>fh", function() require("snacks").picker.help() end)
+map("n", "<leader>sr", function() require("snacks").picker.resume() end)
+map("n", "<leader>n", "<cmd>bnext<CR>")
+map("n", "<leader>p", "<cmd>bprevious<CR>")
+map("n", "<leader>bd", "<cmd>bd<CR>")
+map("n", "<leader>gs", function() require("snacks").picker.git_status() end)
+map("n", "<leader>gc", function() require("snacks").picker.git_log() end)
+map("n", "<leader>gb", function() require("snacks").picker.git_branches() end)
+map("n", "<leader>u", "<cmd>Lazy<CR>")
+map("n", "<leader>d", function() require("dial").augment.create() end, { expr = true })
+map("n", "<leader>ca", vim.lsp.buf.code_action)
+map("n", "gd", vim.lsp.buf.definition)
+map("n", "K", vim.lsp.buf.hover)
+map("n", "<leader>rn", vim.lsp.buf.rename)
+map("n", "<leader>D", vim.lsp.buf.type_definition)
+map("n", "[d", vim.diagnostic.goto_prev)
+map("n", "]d", vim.diagnostic.goto_next)
+
+-- Yank history
+map({ "n", "x" }, "p", "<Plug>(yanky-paste-after)")
+map({ "n", "x" }, "P", "<Plug>(yanky-paste-before)")
+map("n", "y", "<Plug>(yanky-yank)")
+map("n", "[y", "<Plug>(yanky-cycle-forward)")
+map("n", "]y", "<Plug>(yanky-cycle-backward)")
+
+-- Terminal
+map("t", "<Esc>", "<C-\\><C-n>")
+
+-- Yank to system clipboard
+map({ "n", "v" }, "Y", [["+Y]])
+
+-- Better navigation
+map("n", "j", "gj", { desc = "Move down visually" })
+map("n", "k", "gk", { desc = "Move up visually" })
+
+-- Plugins
+require("lazy").setup({
+  -- Colorscheme
+  {
+    "scottmckendry/cyberdream.nvim",
+    name = "cyberdream",
+    priority = 1000,
+    config = function()
+      require("cyberdream").setup({
+        transparent = true,
+        italic_comments = true,
+        terminal_colors = true,
+      })
+      vim.cmd.colorscheme("cyberdream")
+    end,
+  },
+
+  -- Snacks: picker + notifications + ui enhancements
+  {
+    "folke/snacks.nvim",
+    priority = 950,
+    lazy = false,
+    opts = {
+      picker = { enabled = true },
+      notifier = { enabled = true, style = "compact" },
+      animate = { enabled = true },
+      scroll = { enabled = true },
+      indent = { enabled = true, chunk = { enabled = false } },
+      bigfile = { enabled = true },
+      quickfile = { enabled = true },
+    },
+  },
+
+  -- Oil: file explorer as a buffer
+  {
+    "stevearc/oil.nvim",
+    dependencies = { "echasnovski/mini.icons" },
+    opts = {
+      default_file_explorer = true,
+      view_options = { show_hidden = true },
+      keymaps = {
+        ["<C-h>"] = false,
+        ["<C-l>"] = false,
+      },
+      skip_confirm_for_simple_edits = true,
+    },
+  },
+
+  -- Treesitter
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    opts = {
+      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "python", "rust", "go", "typescript", "javascript", "html", "css", "json", "yaml", "toml", "bash", "make", "diff", "markdown" },
+      auto_install = true,
+      highlight = { enable = true },
+      indent = { enable = true },
+    },
+  },
+
+  -- LSP
+  {
+    "neovim/nvim-lspconfig",
+    dependencies = {
+      "williamboman/mason.nvim",
+      "williamboman/mason-lspconfig.nvim",
+    },
+    config = function()
+      require("mason").setup()
+      require("mason-lspconfig").setup({
+        ensure_installed = { "lua_ls", "rust_analyzer", "pyright", "gopls", "ts_ls", "clangd" },
+        automatic_installation = true,
+      })
+
+      local lspconfig = require("lspconfig")
+      local capabilities = require("blink.cmp").get_lsp_capabilities()
+      local on_attach = function(_, bufnr)
+        api.nvim_buf_set_option(bufnr, "formatexpr", vim.lsp.formatexpr)
+      end
+
+      local servers = { "lua_ls", "rust_analyzer", "pyright", "gopls", "ts_ls", "clangd" }
+      for _, server in ipairs(servers) do
+        lspconfig[server].setup({
+          capabilities = capabilities,
+          on_attach = on_attach,
+        })
+      end
+    end,
+  },
+
+  -- Blink.cmp: completion (replaces nvim-cmp + LuaSnip)
+  {
+    "saghen/blink.cmp",
+    version = "*",
+    opts = {
+      keymap = {
+        preset = "default",
+        ["<C-Space>"] = { "show", "hide" },
+        ["<CR>"] = { "accept", "fallback" },
+        ["<Tab>"] = { "select_next", "fallback" },
+        ["<S-Tab>"] = { "select_prev", "fallback" },
+      },
+      sources = { default = { "lsp", "path", "buffer" } },
+      completion = {
+        documentation = { auto_show = true },
+        menu = { border = "rounded" },
+      },
+      appearance = { nerd_font_variant = "normal" },
+    },
+  },
+
+  -- Mini: statusline
+  {
+    "echasnovski/mini.statusline",
+    config = function()
+      require("mini.statusline").setup({
+        use_icons = true,
+        set_vim_settings = false,
+      })
+    end,
+  },
+
+  -- Mini: tabline
+  {
+    "echasnovski/mini.tabline",
+    config = function()
+      require("mini.tabline").setup()
+    end,
+  },
+
+  -- Mini: clue (replaces which-key)
+  {
+    "echasnovski/mini.clue",
+    config = function()
+      require("mini.clue").setup({
+        triggers = {
+          { mode = "n", keys = "<leader>" },
+          { mode = "x", keys = "<leader>" },
+          { mode = "n", keys = "g" },
+          { mode = "n", keys = "z" },
+          { mode = "n", keys = "'" },
+          { mode = "n", keys = "`" },
+          { mode = "n", keys = "\"" },
+          { mode = "i", keys = "<C-r>" },
+        },
+        window = { config = { border = "rounded" } },
+      })
+    end,
+  },
+
+  -- Mini: comment
+  {
+    "echasnovski/mini.comment",
+    config = function()
+      require("mini.comment").setup()
+    end,
+  },
+
+  -- Mini: git
+  {
+    "echasnovski/mini.git",
+    config = function()
+      require("mini.git").setup()
+    end,
+  },
+
+  -- Mini: icons
+  {
+    "echasnovski/mini.icons",
+    config = function()
+      require("mini.icons").setup()
+    end,
+  },
+
+  -- Yanky: yank history ring
+  {
+    "gbprod/yanky.nvim",
+    config = function()
+      require("yanky").setup({
+        ring = { history_length = 100, storage = "shada" },
+        highlight = { timer = 150 },
+        preserve_cursor_position = { enabled = true },
+      })
+    end,
+  },
+
+  -- Hlchunk: colored indent/scope blocks
+  {
+    "shellRaining/hlchunk.nvim",
+    config = function()
+      require("hlchunk").setup({
+        chunk = { enable = true, style = { { fg = "#6c7086" } } },
+        indent = { enable = true, style = { { fg = "#45475a" } } },
+        blank = { enable = false },
+      })
+    end,
+  },
+
+  -- Fold-cycle: toggle folds sanely
+  {
+    "jghauser/fold-cycle.nvim",
+    config = function()
+      require("fold-cycle").setup()
+    end,
+    keys = {
+      { "<Tab>", function() require("fold-cycle").toggle() end, mode = "n", desc = "Toggle fold" },
+      { "<S-Tab>", function() require("fold-cycle").open() end, mode = "n", desc = "Open fold" },
+    },
+  },
+
+  -- Dial: smart increment/decrement
+  {
+    "monaqa/dial.nvim",
+    config = function()
+      local augend = require("dial.augend")
+      require("dial.config").augends:register_group({
+        default = {
+          augend.integer.alias.decimal,
+          augend.integer.alias.hex,
+          augend.date.alias["%Y-%m-%d"],
+          augend.constant.alias.bool,
+          augend.constant.new({ elements = { "true", "false" } }),
+          augend.semver.alias.semver,
+        },
+      })
+    end,
+    keys = {
+      { "<C-a>", function() require("dial").augend() end, mode = { "n", "x" }, desc = "Increment" },
+      { "<C-x>", function() require("dial").augend() end, mode = { "n", "x" }, desc = "Decrement" },
+    },
+  },
+
+  -- Neogen: annotation generator
+  {
+    "danymat/neogen",
+    config = function()
+      require("neogen").setup({ enabled = true })
+    end,
+    keys = {
+      { "<leader>nf", function() require("neogen").generate() end, desc = "Generate annotation" },
+    },
+  },
+
+  -- Nvim-biscuits: closing bracket context
+  {
+    "code-biscuits/nvim-biscuits",
+    config = function()
+      require("nvim-biscuits").setup({
+        default_config = {
+          prefix = " » ",
+          prefix_highlight = "Comment",
+          suffix = "",
+          max_length = 30,
+        },
+      })
+    end,
+  },
+
+  -- Refactoring.nvim
+  {
+    "ThePrimeagen/refactoring.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("refactoring").setup()
+    end,
+    keys = {
+      { "<leader>re", function() require("refactoring").refactor("Extract Function") end, mode = "x", desc = "Extract function" },
+      { "<leader>rv", function() require("refactoring").refactor("Extract Variable") end, mode = "x", desc = "Extract variable" },
+    },
+  },
+})
+
+-- Autocommands
+api.nvim_create_autocmd("BufWritePre", {
+  desc = "Trim trailing whitespace",
+  group = api.nvim_create_augroup("ocws-trim-whitespace", { clear = true }),
+  pattern = "*",
+  callback = function()
+    local save = vim.fn.winsaveview()
+    vim.cmd("%s/\\s\\+$//e")
+    vim.fn.winrestview(save)
+  end,
+})
+
+api.nvim_create_autocmd("LspAttach", {
+  desc = "Configure diagnostics per buffer",
+  group = api.nvim_create_augroup("ocws-lsp-diagnostic", { clear = true }),
+  callback = function()
+    vim.diagnostic.config({
+      virtual_text = true,
+      signs = true,
+      underline = true,
+      update_in_insert = false,
+      float = { border = "rounded" },
+    })
+  end,
+})
