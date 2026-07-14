@@ -75,11 +75,13 @@ echo -e "    3)  DankMaterialShell      9)  LXQt Standalone"
 echo -e "    4)  Noctalia Shell        10)  LXQt Dual Panels"
 echo -e "    5)  OCWS Minimal          11)  LXQt Vertical"
 echo -e "    6)  LXQt Tworow           12)  LXQt Bottom"
+echo -e "   13)  FLTK Panel/Dock (C++)"
+echo -e "   14)  FLTK Panel/Dock (Zig)"
 
-echo -n "  Choice [1-12] (default: 1): "
+echo -n "  Choice [1-14] (default: 14): "
 read -r mode_choice
 
-case "${mode_choice:-1}" in
+case "${mode_choice:-14}" in
     1)  MODE="doublepanel";      MODE_DESC="OCWS Double Panel" ;;
     2)  MODE="crystaldock";      MODE_DESC="Crystal Dock" ;;
     3)  MODE="dms";              MODE_DESC="DankMaterialShell" ;;
@@ -92,7 +94,9 @@ case "${mode_choice:-1}" in
     10) MODE="lxqt-dual-lxqt";   MODE_DESC="LXQt Dual Panels" ;;
     11) MODE="lxqt-vertical";    MODE_DESC="LXQt Vertical" ;;
     12) MODE="lxqt-bottom";      MODE_DESC="LXQt Bottom" ;;
-    *)  MODE="doublepanel";      MODE_DESC="OCWS Double Panel" ;;
+    13) MODE="fltk-panel";       MODE_DESC="FLTK Panel/Dock (C++)" ;;
+    14) MODE="fltk-panel-zig";   MODE_DESC="FLTK Panel/Dock (Zig)" ;;
+    *)  MODE="fltk-panel-zig";   MODE_DESC="FLTK Panel/Dock (Zig)" ;;
 esac
 
 echo -e "  Selected: ${GREEN}${MODE_DESC}${NC}"
@@ -141,7 +145,16 @@ case "$MODE" in
     noctalia)   SHELL_ENGINE="sfwbar" ;;
     tworow|lxqt-classic|lxqt-minimal|lxqt-standalone|lxqt-dual-lxqt|lxqt-vertical|lxqt-bottom)
                 SHELL_ENGINE="lxqt-panel" ;;
+    fltk-panel|fltk-panel-zig)
+        # Custom panel/dock; needs no external shell engine (sfwbar/lxqt).
+        SHELL_ENGINE=""
+        ;;
 esac
+
+# fltk-panel modes are self-contained — drop sfwbar from the core engine list.
+if [[ "$MODE" == fltk-panel* ]]; then
+    CORE_ENGINES="labwc $LAUNCHER"
+fi
 
 # Check current status of each engine
 check_status() {
@@ -177,6 +190,11 @@ case "${dep_choice:-1}" in
             ! command -v crystal-dock >/dev/null 2>&1 && need_build="$need_build crystal-dock"
         elif [[ "$MODE" == tworow || "$MODE" == lxqt-* ]]; then
             ! command -v lxqt-panel >/dev/null 2>&1 && need_build="$need_build lxqt-panel"
+        elif [ "$MODE" = "fltk-panel" ]; then
+            ! command -v fltk-cpp-shell >/dev/null 2>&1 && need_build="$need_build fltk-panel"
+        elif [ "$MODE" = "fltk-panel-zig" ]; then
+            ! command -v zig >/dev/null 2>&1 && need_build="$need_build zig"
+            ! command -v fltk-dock >/dev/null 2>&1 && need_build="$need_build fltk-panel-zig"
         fi
 
         if [ -n "$need_build" ]; then
@@ -201,6 +219,27 @@ case "${dep_choice:-1}" in
                                 echo -e "  lxqt-panel: run ./install-lxqt-panel-source.sh"
                             fi
                             ;;
+                        fltk-panel)
+                            if [ -f "${SCRIPT_DIR}/src/shells/fltk-panel/build-fltk-panel.sh" ]; then
+                                bash "${SCRIPT_DIR}/src/shells/fltk-panel/build-fltk-panel.sh"
+                            else
+                                echo -e "  fltk-panel: run ./src/shells/fltk-panel/build-fltk-panel.sh"
+                            fi
+                            ;;
+                        fltk-panel-zig)
+                            ZIG_DOCK_DIR="${SCRIPT_DIR}/src/shells/fltk-dock-zig"
+                            if [ -f "$ZIG_DOCK_DIR/build.zig" ]; then
+                                info "Building FLTK Panel/Dock (Zig)..."
+                                ( cd "$ZIG_DOCK_DIR" && zig build ) \
+                                    && pass "Zig build complete" \
+                                    || warn "Zig build failed — run: cd src/shells/fltk-dock-zig && zig build"
+                            else
+                                echo -e "  fltk-panel-zig: source not found at src/shells/fltk-dock-zig/"
+                            fi
+                            ;;
+                            zig)
+                                echo -e "  zig: install from https://ziglang.org/download/"
+                            ;;
                     esac
                 done
             else
@@ -214,6 +253,15 @@ case "${dep_choice:-1}" in
                             ;;
                         lxqt-panel)
                             echo -e "  lxqt-panel: ./install-lxqt-panel-source.sh"
+                            ;;
+                        fltk-panel)
+                            echo -e "  fltk-panel: ./src/shells/fltk-panel/build-fltk-panel.sh"
+                            ;;
+                        fltk-panel-zig)
+                            echo -e "  fltk-panel-zig: cd src/shells/fltk-dock-zig && zig build"
+                            ;;
+                            zig)
+                                echo -e "  zig: install from https://ziglang.org/download/"
                             ;;
                     esac
                 done
@@ -613,6 +661,43 @@ case "$MODE" in
             rsync -a "$SCRIPT_DIR/dotfiles/noctalia/" ~/.config/noctalia/ 2>/dev/null || true
             pass "Noctalia config synced."
         fi
+        ;;
+    fltk-panel)
+        info "Deploying FLTK Panel/Dock (C++)..."
+        FLTK_PANEL_DIR="$SCRIPT_DIR/src/shells/fltk-panel"
+        # Build (FLTK is built if missing) and install binaries to ~/.local/bin
+        ( cd "$FLTK_PANEL_DIR" && bash ./build-fltk-panel.sh install ) \
+            || warn "fltk-panel build/install failed — run ./src/shells/fltk-panel/build-fltk-panel.sh manually"
+        # Ensure widget config is present
+        mkdir -p ~/.config/fltk-panel
+        if [ ! -f ~/.config/fltk-panel/widgets.conf ] && [ -f "$FLTK_PANEL_DIR/widgets.conf.example" ]; then
+            cp "$FLTK_PANEL_DIR/widgets.conf.example" ~/.config/fltk-panel/widgets.conf
+        fi
+        pass "FLTK Panel/Dock installed; launched by labwc autostart when mode=fltk-panel."
+        ;;
+    fltk-panel-zig)
+        info "Deploying FLTK Panel/Dock (Zig)..."
+        ZIG_DOCK_DIR="$SCRIPT_DIR/src/shells/fltk-dock-zig"
+        # Build with zig and install binaries to ~/.local/bin
+        if [ -f "$ZIG_DOCK_DIR/build.zig" ]; then
+            ( cd "$ZIG_DOCK_DIR" && zig build ) \
+                || warn "Zig build failed — run: cd src/shells/fltk-dock-zig && zig build"
+            # Install merged binary
+            if [ -f "$ZIG_DOCK_DIR/zig-out/bin/fltk-zig-shell" ]; then
+                install -Dm755 "$ZIG_DOCK_DIR/zig-out/bin/fltk-zig-shell" ~/.local/bin/fltk-zig-shell
+                pass "fltk-zig-shell installed."
+            fi
+            # Install legacy binaries too
+            if [ -f "$ZIG_DOCK_DIR/zig-out/bin/fltk-dock" ]; then
+                install -Dm755 "$ZIG_DOCK_DIR/zig-out/bin/fltk-dock" ~/.local/bin/fltk-dock
+            fi
+            if [ -f "$ZIG_DOCK_DIR/zig-out/bin/fltk-panel" ]; then
+                install -Dm755 "$ZIG_DOCK_DIR/zig-out/bin/fltk-panel" ~/.local/bin/fltk-panel
+            fi
+        else
+            warn "Zig source not found at src/shells/fltk-dock-zig/"
+        fi
+        pass "FLTK Panel/Dock (Zig) installed; launched by labwc autostart when mode=fltk-panel-zig."
         ;;
 esac
 

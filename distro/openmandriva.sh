@@ -25,6 +25,8 @@ PKGS=(
     mako
     cliphist
     qt6ct
+    lib64Qt6Svg
+    lib64Qt6Svg-devel
     xdotool
     imagemagick
     wireplumber

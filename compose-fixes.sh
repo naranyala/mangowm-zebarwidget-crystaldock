@@ -89,7 +89,7 @@ activeIndicatorColorMetal2D=#ffbf00
 backgroundColor=#6b638abd
 backgroundColorMetal2D=#ad7381a6
 borderColor=#99addd
-bouncingLauncherIcon=true
+bouncingLauncherIcon=false
 firstRunWindowCountIndicator=false
 floatingMargin=6
 iconTheme=Papirus-Dark
@@ -101,7 +101,7 @@ panelStyle=4
 showTooltip=true
 spacingFactor=0.5
 tooltipFontSize=24
-zoomingAnimationSpeed=16
+zoomingAnimationSpeed=0
 
 [Application%20Menu]
 backgroundAlpha=0.8

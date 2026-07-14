@@ -26,6 +26,12 @@ else
     fail "C Binaries Integration Suite"
 fi
 echo "----------------------------------------"
+if "$SCRIPT_DIR/run-fltk-panel-tests.sh"; then
+    pass "FLTK Panel Suite"
+else
+    fail "FLTK Panel Suite"
+fi
+echo "----------------------------------------"
 
 # Run zig build test
 if (cd "$SCRIPT_DIR/.." && zig build test); then

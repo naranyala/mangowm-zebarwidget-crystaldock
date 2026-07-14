@@ -1,0 +1,95 @@
+# fltk-panel widget configuration
+#
+# Each [section] is one widget, in the order it appears on the panel
+# (left to right). The section name is the widget type. Unknown types
+# are skipped. Options are "key = value".
+#
+# Available types:
+#   workspaces  launcher  toplevel
+#   cpu  mem  temp  disk  battery  volume  network  media
+#   clock  power  settings
+#
+# NOTE: the "settings" widget is pinned — it is always shown on the right
+# block and cannot be removed, even if its [settings] section is omitted.
+#
+# Common options:
+#   label = TEXT          prefix shown before the value
+#   color = R G B         text color (0..1), e.g. "0.7 0.8 0.9"
+#   side  = left|right    which block the widget belongs to
+#                          (left = anchored left, right = anchored right)
+
+# ---- left block ----
+
+[workspaces]
+color = 0.55 0.80 1.0
+side = left
+
+[launcher]
+label = ⌘
+color = 0.85 0.88 0.95
+side = left
+
+[toplevel]
+side = left
+
+# ---- right block ----
+
+[cpu]
+label = CPU
+color = 0.55 0.90 0.65
+side = right
+
+[mem]
+label = MEM
+color = 0.65 0.85 0.95
+side = right
+
+[temp]
+label = TEMP
+color = 1.0 0.70 0.55
+side = right
+
+[disk]
+label = DISK
+color = 0.80 0.75 0.95
+side = right
+
+[battery]
+label = BAT
+color = 0.70 0.95 0.70
+side = right
+
+[volume]
+label = VOL
+color = 0.80 0.85 1.0
+side = right
+
+[network]
+label = NET
+color = 0.70 0.95 0.85
+side = right
+
+[media]
+label = ▶
+color = 0.95 0.85 0.70
+side = right
+
+[clock]
+label =
+format = %H:%M
+color = 0.75 0.80 0.88
+side = right
+
+[power]
+label = ⏻
+color = 1.0 0.65 0.60
+side = right
+
+# ---- pinned (always present; listed here only to document options) ----
+# The settings widget opens a menu with Reload Configuration / Edit
+# widgets.conf / Restart Shell / Quit Shell. It is added automatically
+# if this section is missing, so you normally don't need to declare it.
+
+[settings]
+color = 0.80 0.80 0.85
+side = right

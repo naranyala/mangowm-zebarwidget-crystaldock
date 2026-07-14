@@ -36,7 +36,7 @@ if command -v dnf &>/dev/null; then
         # Development Libraries for C programs
         lib64gtk+3-devel lib64glib2.0-devel lib64gtk-layer-shell-devel lib64cairo-devel 
         lib64wayland-client-devel lib64pulseaudio-devel lib64lept-devel lib64tesseract-devel
-        lib64Qt6QuickControls2-devel lib64Qt6ShaderTools-devel qt6-qtwayland lib64Qt6WaylandClient-devel lib64Qt6WaylandCompositor-devel
+        lib64Qt6QuickControls2-devel lib64Qt6ShaderTools-devel lib64Qt6Svg lib64Qt6Svg-devel qt6-qtwayland lib64Qt6WaylandClient-devel lib64Qt6WaylandCompositor-devel
     )
 elif command -v apt-get &>/dev/null; then
     PM="apt-get install -y"
@@ -45,7 +45,7 @@ elif command -v apt-get &>/dev/null; then
         wl-clipboard grim slurp cliphist brightnessctl playerctl
         git curl wget jq inotify-tools bc tesseract-ocr rsync unzip tar ripgrep fd-find
         gcc make cmake meson ninja-build pkg-config neovim nodejs npm python3-pip cargo
-        libgtk-3-dev libglib2.0-dev libgtk-layer-shell-dev libcairo2-dev 
+        libgtk-3-dev libglib2.0-dev libgtk-layer-shell-dev libcairo2-dev libqt6svg6-dev
         libwayland-dev libpulse-dev libleptonica-dev libtesseract-dev
     )
 elif command -v pacman &>/dev/null; then
@@ -55,7 +55,7 @@ elif command -v pacman &>/dev/null; then
         wl-clipboard grim slurp cliphist brightnessctl playerctl
         git curl wget jq inotify-tools bc tesseract rsync unzip tar ripgrep fd
         gcc make cmake meson ninja pkgconf zig neovim nodejs npm python-pip cargo
-        gtk3 glib2 gtk-layer-shell cairo wayland libpulse leptonica tesseract
+        gtk3 glib2 gtk-layer-shell cairo qt6-svg wayland libpulse leptonica tesseract
     )
 else
     fail "Unsupported package manager. Please install dependencies manually."

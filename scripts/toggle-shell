@@ -33,6 +33,8 @@ declare -A MODES=(
     ["minimal"]="labwc + minimal sfwbar (clock, volume, battery, tray)"
     ["dms"]="labwc + dankmaterialshell"
     ["noctalia"]="labwc + noctalia shell"
+    ["fltk-panel"]="labwc + fltk top panel + bottom icon dock (C++)"
+    ["fltk-panel-zig"]="labwc + fltk-zig-shell (merged panel + dock, single binary)"
     ["tworow"]="labwc + lxqt-panel (top) + sfwbar 2-row taskbar (bottom)"
     ["lxqt-classic"]="labwc + lxqt-panel bottom (classic desktop) + sfwbar top status"
     ["lxqt-minimal"]="labwc + lxqt-panel top (tray+clock) + sfwbar minimal"
@@ -73,7 +75,7 @@ echo "Current shell mode: $CURRENT"
 echo "Switching to: $NEW"
 
 # Kill existing shells
-for p in crystal-dock sfwbar noctalia dms lxqt-panel; do
+for p in crystal-dock sfwbar noctalia dms lxqt-panel fltk-panel fltk-dock fltk-cpp-shell; do
     if pgrep -x "$p" >/dev/null; then
         echo "Stopping $p..."
         pkill -x "$p"
@@ -83,7 +85,7 @@ done
 # Wait for processes to exit (polling loop instead of fixed sleep)
 for _ in $(seq 1 30); do
     alive=false
-    for p in crystal-dock sfwbar noctalia dms lxqt-panel; do
+for p in crystal-dock sfwbar noctalia dms lxqt-panel fltk-panel fltk-dock fltk-cpp-shell; do
         pgrep -x "$p" >/dev/null 2>&1 && alive=true
     done
     $alive || break
@@ -136,6 +138,28 @@ case "$NEW" in
             echo "Started noctalia"
         else
             ocws_die "toggle-shell: noctalia is not installed"
+        fi
+        ;;
+    fltk-panel)
+        echo "Starting fltk-panel + fltk-dock (C++)..."
+        if command -v fltk-panel >/dev/null 2>&1; then
+            nohup fltk-panel >/dev/null 2>&1 &
+            echo "Started fltk-panel"
+        else
+            echo "warning: fltk-panel not found — build with: cd src/shells/fltk-panel && make"
+        fi
+        if command -v fltk-dock >/dev/null 2>&1; then
+            nohup fltk-dock >/dev/null 2>&1 &
+            echo "Started fltk-dock"
+        fi
+        ;;
+    fltk-panel-zig)
+        echo "Starting fltk-zig-shell (merged panel + dock)..."
+        if command -v fltk-zig-shell >/dev/null 2>&1; then
+            nohup fltk-zig-shell >/dev/null 2>&1 &
+            echo "Started fltk-zig-shell"
+        else
+            echo "warning: fltk-zig-shell not found — build with: cd src/shells/fltk-dock-zig && zig build"
         fi
         ;;
     doublepanel)

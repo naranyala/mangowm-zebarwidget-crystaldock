@@ -1,0 +1,240 @@
+#!/bin/bash
+# restart-fltk-panel — Stop and relaunch fltk-panel + fltk-dock
+#
+# Usage:
+#   restart-fltk-panel          # restart both panel and dock
+#   restart-fltk-panel panel    # restart panel only
+#   restart-fltk-panel dock     # restart dock only
+#   restart-fltk-panel build    # rebuild before restart
+#   restart-fltk-panel stop     # stop without restarting
+#   restart-fltk-panel status   # show running processes and binary locations
+
+set -euo pipefail
+
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+info()  { echo -e "${CYAN}[*]${NC} $1"; }
+ok()    { echo -e "${GREEN}[+]${NC} $1"; }
+warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
+fail()  { echo -e "${RED}[-]${NC} $1"; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PANEL_SRC="$PROJECT_DIR/src/shells/fltk-panel"
+ZIG_SRC="$PROJECT_DIR/src/shells/fltk-dock-zig"
+PANEL_BIN="$HOME/.local/bin/fltk-panel"
+DOCK_BIN="$HOME/.local/bin/fltk-dock"
+SHELL_BIN="$HOME/.local/bin/fltk-zig-shell"
+
+# === Process Management ===
+
+stop_panel() {
+    if pgrep -x fltk-panel >/dev/null 2>&1; then
+        info "Stopping fltk-panel (PID: $(pgrep -x fltk-panel))..."
+        pkill -x fltk-panel
+        sleep 0.3
+        ok "fltk-panel stopped"
+    else
+        warn "fltk-panel not running"
+    fi
+}
+
+stop_dock() {
+    if pgrep -x fltk-dock >/dev/null 2>&1; then
+        info "Stopping fltk-dock (PID: $(pgrep -x fltk-dock))..."
+        pkill -x fltk-dock
+        sleep 0.3
+        ok "fltk-dock stopped"
+    else
+        warn "fltk-dock not running"
+    fi
+}
+
+start_panel() {
+    if [ -x "$PANEL_BIN" ]; then
+        info "Starting fltk-panel..."
+        nohup "$PANEL_BIN" >/dev/null 2>&1 &
+        sleep 0.5
+        if pgrep -x fltk-panel >/dev/null 2>&1; then
+            ok "fltk-panel running (PID: $(pgrep -x fltk-panel))"
+        else
+            warn "fltk-panel may not have started"
+        fi
+    elif [ -x "$PANEL_SRC/fltk-panel" ]; then
+        info "Starting fltk-panel from source..."
+        nohup "$PANEL_SRC/fltk-panel" >/dev/null 2>&1 &
+        sleep 0.5
+        if pgrep -x fltk-panel >/dev/null 2>&1; then
+            ok "fltk-panel running (PID: $(pgrep -x fltk-panel))"
+        else
+            warn "fltk-panel may not have started"
+        fi
+    else
+        fail "fltk-panel not found. Build with: cd src/shells/fltk-panel && make"
+    fi
+}
+
+start_dock() {
+    if [ -x "$DOCK_BIN" ]; then
+        info "Starting fltk-dock..."
+        nohup "$DOCK_BIN" >/dev/null 2>&1 &
+        sleep 0.5
+        if pgrep -x fltk-dock >/dev/null 2>&1; then
+            ok "fltk-dock running (PID: $(pgrep -x fltk-dock))"
+        else
+            warn "fltk-dock may not have started"
+        fi
+    elif [ -x "$PANEL_SRC/fltk-dock" ]; then
+        info "Starting fltk-dock from source..."
+        nohup "$PANEL_SRC/fltk-dock" >/dev/null 2>&1 &
+        sleep 0.5
+        if pgrep -x fltk-dock >/dev/null 2>&1; then
+            ok "fltk-dock running (PID: $(pgrep -x fltk-dock))"
+        else
+            warn "fltk-dock may not have started"
+        fi
+    else
+        fail "fltk-dock not found. Build with: cd src/shells/fltk-panel && make"
+    fi
+}
+
+# === Build ===
+
+build_panel() {
+    info "Building fltk-panel + fltk-dock..."
+    if [ -d "$ZIG_SRC" ] && [ -f "$ZIG_SRC/build.zig" ] && command -v zig >/dev/null 2>&1; then
+        info "Building with Zig..."
+        ( cd "$ZIG_SRC" && zig build )
+        cp "$ZIG_SRC/zig-out/bin/fltk-panel" "$PANEL_BIN" 2>/dev/null || true
+        cp "$ZIG_SRC/zig-out/bin/fltk-dock" "$DOCK_BIN" 2>/dev/null || true
+    elif [ -d "$PANEL_SRC" ]; then
+        info "Building with Make (C++)..."
+        make -C "$PANEL_SRC" clean 2>/dev/null || true
+        make -C "$PANEL_SRC" -j"$(nproc)"
+    else
+        fail "No build source found"
+    fi
+    ok "Build complete"
+}
+
+# === Status ===
+
+show_status() {
+    echo "FLTK Shell Status"
+    echo "================="
+    echo ""
+
+    # Check for merged binary first
+    local shell_pid=$(pgrep -x fltk-zig-shell 2>/dev/null || echo "")
+    if [ -n "$shell_pid" ]; then
+        echo -e "  ${GREEN}fltk-zig-shell${NC} (PID: $shell_pid) — merged panel + dock"
+    fi
+
+    for proc in fltk-panel fltk-dock; do
+        local pid=$(pgrep -x "$proc" 2>/dev/null || echo "")
+        if [ -n "$pid" ]; then
+            echo -e "  ${GREEN}$proc${NC} (PID: $pid)"
+        fi
+    done
+
+    if [ -z "$shell_pid" ]; then
+        for proc in fltk-panel fltk-dock; do
+            local pid=$(pgrep -x "$proc" 2>/dev/null || echo "")
+            if [ -z "$pid" ]; then
+                echo -e "  ${YELLOW}$proc${NC} (not running)"
+            fi
+        done
+        if [ -z "$shell_pid" ]; then
+            echo -e "  ${YELLOW}fltk-zig-shell${NC} (not running)"
+        fi
+    fi
+
+    echo ""
+    echo "Binaries:"
+    for bin in "$SHELL_BIN" "$PANEL_BIN" "$DOCK_BIN"; do
+        if [ -x "$bin" ]; then
+            echo -e "  ${GREEN}$bin${NC}"
+        fi
+    done
+}
+
+# === Main ===
+
+case "${1:-restart}" in
+    restart)
+        # Try merged binary first, fall back to separate binaries
+        if [ -x "$SHELL_BIN" ]; then
+            info "Restarting fltk-zig-shell..."
+            if pgrep -x fltk-zig-shell >/dev/null 2>&1; then
+                pkill -x fltk-zig-shell
+                sleep 0.3
+            fi
+            nohup "$SHELL_BIN" >/dev/null 2>&1 &
+            sleep 0.5
+            if pgrep -x fltk-zig-shell >/dev/null 2>&1; then
+                ok "fltk-zig-shell running (PID: $(pgrep -x fltk-zig-shell))"
+            else
+                warn "fltk-zig-shell may not have started"
+            fi
+        else
+            info "Restarting fltk-panel + fltk-dock..."
+            stop_dock
+            stop_panel
+            sleep 0.2
+            start_panel
+            start_dock
+        fi
+        ;;
+    panel)
+        info "Restarting fltk-panel..."
+        stop_panel
+        sleep 0.2
+        start_panel
+        ;;
+    dock)
+        info "Restarting fltk-dock..."
+        stop_dock
+        sleep 0.2
+        start_dock
+        ;;
+    build)
+        build_panel
+        info "Restarting with new build..."
+        stop_dock
+        stop_panel
+        sleep 0.2
+        start_panel
+        start_dock
+        ;;
+    stop)
+        info "Stopping all fltk processes..."
+        if pgrep -x fltk-zig-shell >/dev/null 2>&1; then
+            pkill -x fltk-zig-shell
+            ok "fltk-zig-shell stopped"
+        fi
+        stop_dock
+        stop_panel
+        ok "All stopped"
+        ;;
+    status)
+        show_status
+        ;;
+    help|--help|-h)
+        echo "Usage: restart-fltk-panel [command]"
+        echo ""
+        echo "Commands:"
+        echo "  restart    Stop and relaunch both panel and dock (default)"
+        echo "  panel      Restart panel only"
+        echo "  dock       Restart dock only"
+        echo "  build      Rebuild from source before restart"
+        echo "  stop       Stop both without restarting"
+        echo "  status     Show running processes and binary locations"
+        ;;
+    *)
+        fail "Unknown command: $1. Run '$0 help' for usage."
+        ;;
+esac

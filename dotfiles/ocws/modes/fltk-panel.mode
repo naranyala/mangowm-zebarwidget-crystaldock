@@ -1,0 +1,7 @@
+# fltk-panel mode — FLTK-based Wayland panel + dock with wlr-layer-shell
+# Status: functional
+# Top bar:  ~/.local/bin/fltk-panel  (text-based workspace+taskbar+clock)
+# Bottom dock: ~/.local/bin/fltk-dock  (icon-based app switcher, click-to-activate)
+# Rendering: Cairo + Pango (not FLTK widgets; fl_open_display hangs)
+# Taskbar: wlr-foreign-toplevel-management
+# Pointer: wl_seat click-to-activate on dock icons

@@ -3,7 +3,7 @@ set -euo pipefail
 echo "Installing OCWS dependencies for Debian/Ubuntu..."
 apt update
 PKGS=(
-    labwc rofi foot mako-notifier qt6ct
+    labwc rofi foot mako-notifier qt6ct libqt6svg6-dev
     swaybg swayidle swaylock gammastep
     playerctl wl-clipboard grim slurp flameshot
     jq crudini libxml2-utils brightnessctl wlr-randr

@@ -162,6 +162,19 @@ else
         nohup noctalia > /dev/null 2>&1 &
       fi
       ;;
+    fltk-panel)
+      if command -v fltk-panel >/dev/null 2>&1; then
+        nohup fltk-panel > /dev/null 2>&1 &
+      fi
+      if command -v fltk-dock >/dev/null 2>&1; then
+        nohup fltk-dock > /dev/null 2>&1 &
+      fi
+      ;;
+    fltk-panel-zig)
+      if command -v fltk-zig-shell >/dev/null 2>&1; then
+        nohup fltk-zig-shell > /dev/null 2>&1 &
+      fi
+      ;;
     *)
       nohup sfwbar -f "$HOME/.config/ocws/modes/dual.mode" > /dev/null 2>&1 &
       ;;
