@@ -1,0 +1,165 @@
+#!/bin/bash
+# restart-zigshell — Stop and relaunch zigshell (cairo-pango or blend2d)
+#
+# Usage:
+#   restart-zigshell          # restart active shell
+#   restart-zigshell blend2d  # restart with blend2d renderer
+#   restart-zigshell build    # rebuild before restart
+#   restart-zigshell stop     # stop without restarting
+#   restart-zigshell status   # show running processes and binary locations
+#   restart-zigshell help     # show usage
+
+set -euo pipefail
+
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+info()  { echo -e "${CYAN}[*]${NC} $1"; }
+ok()    { echo -e "${GREEN}[+]${NC} $1"; }
+warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
+fail()  { echo -e "${RED}[-]${NC} $1"; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+ZIG_CAIRO="$PROJECT_DIR/src/shells/zigshell-cairo-pango"
+ZIG_BLEND="$PROJECT_DIR/src/shells/zigshell-blend2d"
+SHELL_CAIRO="$HOME/.local/bin/zigshell-cairo-pango"
+SHELL_BLEND="$HOME/.local/bin/zigshell-blend2d"
+
+# Detect which shell to use
+USE_BLEND2D=false
+if [ "${1:-}" = "blend2d" ]; then
+    USE_BLEND2D=true
+    shift
+fi
+
+if $USE_BLEND2D || { [ ! -x "$SHELL_CAIRO" ] && [ -x "$SHELL_BLEND" ]; }; then
+    SHELL_BIN="$SHELL_BLEND"
+    SHELL_NAME="zigshell-blend2d"
+    SHELL_SRC="$ZIG_BLEND"
+    LD_PRELOAD_DIR="$HOME/.local/lib"
+else
+    SHELL_BIN="$SHELL_CAIRO"
+    SHELL_NAME="zigshell-cairo-pango"
+    SHELL_SRC="$ZIG_CAIRO"
+    LD_PRELOAD_DIR=""
+fi
+
+is_running() { pgrep -x "$SHELL_NAME" >/dev/null 2>&1; }
+
+stop_shell() {
+    # Stop both shells
+    for name in zigshell-cairo-pango zigshell-blend2d; do
+        if pgrep -x "$name" >/dev/null 2>&1; then
+            info "Stopping $name (PID: $(pgrep -x "$name"))..."
+            pkill -x "$name"
+            sleep 0.3
+            ok "$name stopped"
+        fi
+    done
+}
+
+start_shell() {
+    if [ -x "$SHELL_BIN" ]; then
+        info "Starting $SHELL_NAME..."
+        if [ -n "$LD_PRELOAD_DIR" ]; then
+            LD_LIBRARY_PATH="$LD_PRELOAD_DIR:${LD_LIBRARY_PATH:-}" \
+              nohup "$SHELL_BIN" >/dev/null 2>&1 &
+        else
+            nohup "$SHELL_BIN" >/dev/null 2>&1 &
+        fi
+        sleep 0.5
+        if is_running; then
+            ok "$SHELL_NAME running (PID: $(pgrep -x "$SHELL_NAME"))"
+        else
+            warn "$SHELL_NAME may not have started"
+        fi
+    elif [ -x "$SHELL_SRC/zig-out/bin/$SHELL_NAME" ]; then
+        info "Starting $SHELL_NAME from build output..."
+        if [ -n "$LD_PRELOAD_DIR" ]; then
+            LD_LIBRARY_PATH="$LD_PRELOAD_DIR:${LD_LIBRARY_PATH:-}" \
+              nohup "$SHELL_SRC/zig-out/bin/$SHELL_NAME" >/dev/null 2>&1 &
+        else
+            nohup "$SHELL_SRC/zig-out/bin/$SHELL_NAME" >/dev/null 2>&1 &
+        fi
+        sleep 0.5
+        if is_running; then
+            ok "$SHELL_NAME running (PID: $(pgrep -x "$SHELL_NAME"))"
+        else
+            warn "$SHELL_NAME may not have started"
+        fi
+    else
+        fail "$SHELL_NAME not found. Build with: cd $SHELL_SRC && zig build"
+    fi
+}
+
+build_shell() {
+    info "Building $SHELL_NAME..."
+    if [ -d "$SHELL_SRC" ] && [ -f "$SHELL_SRC/build.zig" ] && command -v zig >/dev/null 2>&1; then
+        ( cd "$SHELL_SRC" && zig build )
+        ok "Build complete"
+    else
+        fail "Cannot build: zig or $SHELL_SRC/build.zig not found"
+    fi
+}
+
+show_status() {
+    echo "Zigshell Status"
+    echo "================"
+    echo ""
+
+    for name in zigshell-cairo-pango zigshell-blend2d; do
+        local pid=$(pgrep -x "$name" 2>/dev/null || echo "")
+        if [ -n "$pid" ]; then
+            echo -e "  ${GREEN}$name${NC} (PID: $pid) — merged panel + dock"
+        else
+            echo -e "  ${YELLOW}$name${NC} (not running)"
+        fi
+    done
+
+    echo ""
+    echo "Binaries:"
+    for bin in "$SHELL_CAIRO" "$SHELL_BLEND"; do
+        if [ -x "$bin" ]; then
+            echo -e "  ${GREEN}$bin${NC}"
+        fi
+    done
+}
+
+case "${1:-restart}" in
+    restart)
+        stop_shell
+        sleep 0.2
+        start_shell
+        ;;
+    build)
+        build_shell
+        info "Restarting with new build..."
+        stop_shell
+        sleep 0.2
+        start_shell
+        ;;
+    stop)
+        stop_shell
+        ok "All stopped"
+        ;;
+    status)
+        show_status
+        ;;
+    help|--help|-h)
+        echo "Usage: restart-zigshell [command]"
+        echo ""
+        echo "Commands:"
+        echo "  restart    Stop and relaunch the shell (default)"
+        echo "  blend2d    Use zigshell-blend2d instead of cairo-pango"
+        echo "  build      Rebuild from source before restart"
+        echo "  stop       Stop without restarting"
+        echo "  status     Show running processes and binary locations"
+        ;;
+    *)
+        fail "Unknown command: $1. Run '$0 help' for usage."
+        ;;
+esac

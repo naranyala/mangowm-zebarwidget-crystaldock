@@ -33,8 +33,8 @@ declare -A MODES=(
     ["minimal"]="labwc + minimal sfwbar (clock, volume, battery, tray)"
     ["dms"]="labwc + dankmaterialshell"
     ["noctalia"]="labwc + noctalia shell"
-    ["fltk-panel"]="labwc + fltk top panel + bottom icon dock (C++)"
-    ["fltk-panel-zig"]="labwc + fltk-zig-shell (merged panel + dock, single binary)"
+    ["zigshell-cairo-pango"]="labwc + zigshell-cairo-pango (merged panel + dock, single binary)"
+    ["zigshell-blend2d"]="labwc + zigshell-blend2d (merged panel + dock, Blend2D renderer)"
     ["tworow"]="labwc + lxqt-panel (top) + sfwbar 2-row taskbar (bottom)"
     ["lxqt-classic"]="labwc + lxqt-panel bottom (classic desktop) + sfwbar top status"
     ["lxqt-minimal"]="labwc + lxqt-panel top (tray+clock) + sfwbar minimal"
@@ -75,7 +75,7 @@ echo "Current shell mode: $CURRENT"
 echo "Switching to: $NEW"
 
 # Kill existing shells
-for p in crystal-dock sfwbar noctalia dms lxqt-panel fltk-panel fltk-dock fltk-cpp-shell; do
+for p in crystal-dock sfwbar noctalia dms lxqt-panel zigshell-cairo-pango zigshell-blend2d; do
     if pgrep -x "$p" >/dev/null; then
         echo "Stopping $p..."
         pkill -x "$p"
@@ -85,7 +85,7 @@ done
 # Wait for processes to exit (polling loop instead of fixed sleep)
 for _ in $(seq 1 30); do
     alive=false
-for p in crystal-dock sfwbar noctalia dms lxqt-panel fltk-panel fltk-dock fltk-cpp-shell; do
+for p in crystal-dock sfwbar noctalia dms lxqt-panel zigshell-cairo-pango zigshell-blend2d; do
         pgrep -x "$p" >/dev/null 2>&1 && alive=true
     done
     $alive || break
@@ -140,26 +140,23 @@ case "$NEW" in
             ocws_die "toggle-shell: noctalia is not installed"
         fi
         ;;
-    fltk-panel)
-        echo "Starting fltk-panel + fltk-dock (C++)..."
-        if command -v fltk-panel >/dev/null 2>&1; then
-            nohup fltk-panel >/dev/null 2>&1 &
-            echo "Started fltk-panel"
+    zigshell-cairo-pango)
+        echo "Starting zigshell-cairo-pango (merged panel + dock)..."
+        if command -v zigshell-cairo-pango >/dev/null 2>&1; then
+            nohup zigshell-cairo-pango >/dev/null 2>&1 &
+            echo "Started zigshell-cairo-pango"
         else
-            echo "warning: fltk-panel not found — build with: cd src/shells/fltk-panel && make"
-        fi
-        if command -v fltk-dock >/dev/null 2>&1; then
-            nohup fltk-dock >/dev/null 2>&1 &
-            echo "Started fltk-dock"
+            echo "warning: zigshell-cairo-pango not found — build with: cd src/shells/zigshell-cairo-pango && zig build"
         fi
         ;;
-    fltk-panel-zig)
-        echo "Starting fltk-zig-shell (merged panel + dock)..."
-        if command -v fltk-zig-shell >/dev/null 2>&1; then
-            nohup fltk-zig-shell >/dev/null 2>&1 &
-            echo "Started fltk-zig-shell"
+    zigshell-blend2d)
+        echo "Starting zigshell-blend2d (merged panel + dock, Blend2D)..."
+        if command -v zigshell-blend2d >/dev/null 2>&1; then
+            LD_LIBRARY_PATH="${HOME}/.local/lib:${LD_LIBRARY_PATH:-}" \
+              nohup zigshell-blend2d >/dev/null 2>&1 &
+            echo "Started zigshell-blend2d"
         else
-            echo "warning: fltk-zig-shell not found — build with: cd src/shells/fltk-dock-zig && zig build"
+            echo "warning: zigshell-blend2d not found — build with: cd src/shells/zigshell-blend2d && zig build"
         fi
         ;;
     doublepanel)
