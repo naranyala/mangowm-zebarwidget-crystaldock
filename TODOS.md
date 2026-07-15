@@ -85,37 +85,37 @@ and makes rendering code shareable with the C++ cairo-pango version.
 | `toplevel.zig` | 40 | 5 | **No** | Pure Zig data, no C dependency |
 
 #### Phase 8a — blend2d_render.c (HIGHEST PRIORITY)
-- [ ] Create `blend2d_render.h` with function declarations.
-- [ ] Create `blend2d_render.c` — init, deinit, flush, fillRect, drawText, measureText, drawCircle, drawBorder, font loading.
-- [ ] Update `blend2d_render.zig` to import from C header instead of wrapping Blend2D directly.
-- [ ] Verify all 14 render tests still pass.
+- [x] Create `blend2d_render.h` with function declarations. — **DONE**: 15 C functions declared.
+- [x] Create `blend2d_render.c` — init, deinit, flush, fillRect, drawText, measureText, drawCircle, drawBorder, font loading. — **DONE**: 233 lines C.
+- [x] Update `blend2d_render.zig` to import from C header instead of wrapping Blend2D directly. — **DONE**: Thin wrapper, ~150 lines of casting boilerplate eliminated.
+- [x] Verify all 14 render tests still pass. — **DONE**: All 68 tests pass.
 - [ ] Benchmark: compare render time before/after C migration.
 
 #### Phase 8b — icon.c (HIGH PRIORITY)
-- [ ] Create `icon.h` with function declarations.
-- [ ] Create `icon.c` — desktop file parsing, PNG loading, fallback icon generation, cache management.
-- [ ] Update `icon.zig` to import from C header.
-- [ ] Verify all 13 icon tests still pass.
+- [x] Create `icon.h` with function declarations. — **DONE**: 3 functions declared.
+- [x] Create `icon.c` — desktop file parsing, PNG loading, fallback icon generation, cache management. — **DONE**: 170 lines C.
+- [x] Update `icon.zig` to import from C header. — **DONE**: Zig wrapper calls C functions.
+- [x] Verify all 13 icon tests still pass. — **DONE**: All tests pass.
 
 #### Phase 8c — dock.c (MEDIUM PRIORITY)
-- [ ] Create `dock.h` with function declarations.
-- [ ] Create `dock.c` — dock_draw() and dock_icon_at().
-- [ ] Update `dock.zig` to import from C header.
-- [ ] Verify all 8 dock tests still pass.
+- [x] Create `dock.h` with function declarations. — **DONE**: 2 functions declared.
+- [x] Create `dock.c` — dock_draw() and dock_icon_at(). — **DONE**: 80 lines C.
+- [x] Update `dock.zig` to import from C header. — **DONE**: Zig wrapper calls C functions.
+- [x] Verify all 8 dock tests still pass. — **DONE**: All tests pass.
 
 #### Phase 8d — panel_draw.c (MEDIUM PRIORITY)
-- [ ] Create `panel_draw.h` with draw callback declarations.
-- [ ] Create `panel_draw.c` — all 13 widget draw functions (wsDraw, cpuDraw, memDraw, etc.).
-- [ ] Update `panel.zig` draw callbacks to call C functions.
-- [ ] Keep widget creation, measurement, config, click handling in Zig.
-- [ ] Verify all 17 panel tests still pass.
+- [x] Create `panel_draw.h` with draw callback declarations. — **DONE**: 15 functions declared.
+- [x] Create `panel_draw.c` — all 13 widget draw functions (wsDraw, cpuDraw, memDraw, etc.). — **DONE**: 91 lines C.
+- [x] Update `panel.zig` draw callbacks to call C functions. — **DONE**: Zig wrapper calls C functions.
+- [x] Keep widget creation, measurement, config, click handling in Zig. — **DONE**: Only draw moved to C.
+- [x] Verify all 17 panel tests still pass. — **DONE**: All tests pass.
 
 #### Phase 8e — Integration
-- [ ] Update `dock_c.h` with all new function declarations.
-- [ ] Update `dock_c_impl.c` with all new implementations.
-- [ ] Update `build.zig` to compile new C sources.
-- [ ] Run full test suite: `zig build test`.
-- [ ] Verify binary builds and runs on Wayland.
+- [x] Update `dock_c.h` with all new function declarations. — **DONE**: All headers included.
+- [x] Update `dock_c_impl.c` with all new implementations. — **DONE**: All C sources compiled.
+- [x] Update `build.zig` to compile new C sources. — **DONE**: 5 C files compiled.
+- [x] Run full test suite: `zig build test`. — **DONE**: All 68 tests pass.
+- [x] Verify binary builds and runs on Wayland. — **DONE**: Binary runs clean.
 
 ### Architecture decisions (locked)
 - Blend2D renders directly to mmap'd SHM buffer — zero pixel copying.

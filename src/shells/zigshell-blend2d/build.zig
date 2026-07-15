@@ -61,6 +61,18 @@ pub fn build(b: *std.Build) void {
         .file = b.path("src/blend2d_render.c"),
         .flags = &.{ "-std=gnu11", "-Wall" },
     });
+    root_mod.addCSourceFile(.{
+        .file = b.path("src/icon.c"),
+        .flags = &.{ "-std=gnu11", "-Wall" },
+    });
+    root_mod.addCSourceFile(.{
+        .file = b.path("src/dock.c"),
+        .flags = &.{ "-std=gnu11", "-Wall" },
+    });
+    root_mod.addCSourceFile(.{
+        .file = b.path("src/panel_draw.c"),
+        .flags = &.{ "-std=gnu11", "-Wall" },
+    });
 
     b.installArtifact(exe);
 

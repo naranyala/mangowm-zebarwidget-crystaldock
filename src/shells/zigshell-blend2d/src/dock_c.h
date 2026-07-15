@@ -30,5 +30,14 @@
 // Blend2D rendering abstraction
 #include "blend2d_render.h"
 
+// Icon loading
+#include "icon.h"
+
+// Dock rendering
+#include "dock.h"
+
+// Panel draw functions
+#include "panel_draw.h"
+
 // Utility
 int dock_create_shm_fd(size_t size);
