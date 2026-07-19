@@ -149,6 +149,23 @@ fn writeZ(out: []u8, s: []const u8) void {
     out[n] = 0;
 }
 
+// ---- Versions --------------------------------------------------------------
+
+/// Writes e.g. "WL:1.22 LC:0.8" into `out`.
+/// wayland_ver is the protocol version from registry binding (0 if unknown).
+pub fn versions(out: []u8, wayland_ver: u32) void {
+    // Try to get labwc version from environment
+    var labwc_ver: []const u8 = "?";
+    var labwc_buf: [32]u8 = undefined;
+    if (readFileInto("/sys/module/labwc/parameters/version", &labwc_buf)) |data| {
+        const trimmed = trimLine(data);
+        if (trimmed.len > 0 and trimmed.len < 32) {
+            labwc_ver = trimmed;
+        }
+    }
+    _ = std.fmt.bufPrintZ(out, "WL:{d} LC:{s}", .{ wayland_ver, labwc_ver }) catch {};
+}
+
 // ---- Network ---------------------------------------------------------------
 
 pub const NetSample = struct {

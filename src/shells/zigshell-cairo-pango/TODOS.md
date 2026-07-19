@@ -41,3 +41,17 @@ This document outlines the planned modern features inspired by Material Design (
 - [ ] **Live Window Previews**: Utilize Wayland screencopy protocols to draw live thumbnail buffers when hovering over a dock icon.
 - [ ] **Drag-and-Drop Reordering**: Track `WL_POINTER_BUTTON_STATE_PRESSED` and motion events to let users click, drag, and swap icon indices.
 - [ ] **Parabolic Magnification (Mac Style)**: Apply Gaussian distance scaling to dock icons on hover instead of simple linear scaling.
+
+## 8. Stability & Refactoring
+- [ ] **Non-blocking Process Spawning**: Replace `c.system` in `spawn()` with a native, non-blocking asynchronous process spawning approach (e.g., `std.process.Child`) to prevent panel hangs on unbackgrounded commands.
+- [ ] **Bounds-Checked String Handling**: Replace C-interop string functions (`sscanf`, `fgets` into fixed arrays) with Zig's native string formatting and bounds-checking slices to prevent silent truncations.
+- [ ] **Safe Temp Files**: Ensure temporary files used in `ccUpdate` are cleaned up correctly even if the subprocess is killed or fails.
+
+## 9. Code Quality & Maintenance
+- [ ] **Extract Theme API**: Move hardcoded font sizes and `cairo` color codes into a `theme.zig` configuration struct, enabling customizable `.toml`/`.css` styles without recompilation.
+
+## 10. Modern UX Enhancements
+- [ ] **Scroll Wheel Integration**: Implement `.axis` and `.axis_discrete` Wayland events to pass scroll actions down to a new `.scroll_fn` on widgets (enables volume/brightness adjustment by scrolling).
+- [ ] **StatusNotifierItem (System Tray)**: Implement an SNI host over D-Bus to embed modern app indicator icons into the panel.
+- [ ] **Hover Tooltips**: Add a `.hover_fn` or `.tooltip_fn` to widgets for displaying extended information on pointer motion (e.g., full date on clock, IP on network).
+- [ ] **Event-Driven Widget Updates**: Transition widgets (Media, Network, Volume) from polling loops to event-driven updates via DBus listeners (like `zbus`) to save CPU cycles.

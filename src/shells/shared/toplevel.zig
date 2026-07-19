@@ -38,6 +38,7 @@ pub fn add(infos: []ToplevelInfo, count: *i32, handle: ?*anyopaque) usize {
 pub fn removeAt(infos: []ToplevelInfo, count: *i32, idx: i32) void {
     if (idx < 0 or idx >= count.* or count.* <= 0) return;
     count.* -= 1;
+    if (count.* < 0) count.* = 0;
     const ui: usize = @intCast(idx);
     const uc: usize = @intCast(count.*);
     if (ui < uc) {

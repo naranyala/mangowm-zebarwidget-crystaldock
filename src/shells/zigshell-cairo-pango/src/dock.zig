@@ -48,7 +48,11 @@ pub fn draw(
     hover_idx: i32,
     mouse_x: f64,
 ) void {
-    _ = hover_idx;
+    // Map hover_idx to items array index for visual feedback
+    var hovered_g: i32 = -1;
+    if (hover_idx >= 1000) {
+        hovered_g = @intCast(hover_idx - 1000);
+    }
     initOrder();
     
     // Background gradient
@@ -126,7 +130,7 @@ pub fn draw(
     var total_w: f64 = 0;
     const slot: f64 = DOCK_ICON_SIZE + PAD;
     const unscaled_total: f64 = if (num_items > 0) @as(f64, @floatFromInt(num_items)) * slot - PAD else 0;
-    const toggles_w: f64 = PAD * 3.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 2));
+    const toggles_w: f64 = PAD * 4.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 3));
     const unscaled_block_w = unscaled_total + toggles_w;
     const unscaled_start_x: f64 = @max(0, (@as(f64, @floatFromInt(w)) - unscaled_block_w) / 2.0);
 
@@ -165,30 +169,48 @@ pub fn draw(
         // never rely on the backing buffer being NUL-terminated (issue #21).
         var name_buf: [256]u8 = std.mem.zeroes([256]u8);
         const name_z = std.fmt.bufPrintZ(&name_buf, "{s}", .{name_slice}) catch "unknown";
-        const icon_surf = icon.load(name_z, DOCK_ICON_SIZE);
+        const icon_surf = icon.load(name_z, 128);
 
         c.cairo_save(cr);
         c.cairo_translate(cr, x, icon_y);
-        const scale_factor = icon_w / @as(f64, @floatFromInt(DOCK_ICON_SIZE));
+        const scale_factor = icon_w / 128.0;
         c.cairo_scale(cr, scale_factor, scale_factor);
         c.cairo_set_source_surface(cr, icon_surf, 0, 0);
         c.cairo_paint(cr);
         c.cairo_restore(cr);
 
-        // Multi-Window Indicators (Dots)
+        // Hover highlight: translucent glow behind the hovered icon
+        if (hovered_g >= 0 and @as(i32, @intCast(g)) == hovered_g) {
+            c.cairo_set_source_rgba(cr, t.accent_color[0], t.accent_color[1], t.accent_color[2], 0.15);
+            c.cairo_arc(cr, x + icon_w / 2.0, icon_y + icon_w / 2.0, icon_w / 2.0 + 4.0, 0, 2.0 * std.math.pi);
+            c.cairo_fill(cr);
+        }
+
+        // Multi-Window Indicators (Dots/Pill)
         const count = item.count;
         if (count > 0) {
-            const dot_spacing = 6.0;
-            const total_dots_w = @as(f64, @floatFromInt(count - 1)) * dot_spacing;
-            const start_dot_x = x + icon_w / 2.0 - total_dots_w / 2.0;
+            const dot_spacing = 8.0;
+            const has_focused = item.focused;
+            
+            // A focused app gets a wide "pill" (takes space of 2 dots)
+            const pill_width = 10.0;
+            const extra_width = if (has_focused) @as(f64, pill_width - 3.0) else @as(f64, 0.0);
+            const total_dots_w = @as(f64, @floatFromInt(count - 1)) * dot_spacing + extra_width;
+            var current_dot_x = x + icon_w / 2.0 - total_dots_w / 2.0;
 
             for (0..count) |d| {
-                const dot_x = start_dot_x + @as(f64, @floatFromInt(d)) * dot_spacing;
-                c.cairo_arc(cr, dot_x, @as(f64, @floatFromInt(h)) - 3.0, 1.5, 0, 2.0 * std.math.pi);
-                if (item.focused) {
-                    theme.setSource(cr, t.accent_color);
+                const is_active_dot = has_focused and d == 0; // represent active window with first indicator
+                if (is_active_dot) {
+                    c.cairo_set_source_rgba(cr, t.accent_color[0], t.accent_color[1], t.accent_color[2], 0.9);
+                    c.cairo_new_sub_path(cr);
+                    c.cairo_arc(cr, current_dot_x, @as(f64, @floatFromInt(h)) - 3.0, 1.5, std.math.pi / 2.0, 3.0 * std.math.pi / 2.0);
+                    c.cairo_arc(cr, current_dot_x + pill_width - 3.0, @as(f64, @floatFromInt(h)) - 3.0, 1.5, -std.math.pi / 2.0, std.math.pi / 2.0);
+                    c.cairo_close_path(cr);
+                    current_dot_x += dot_spacing + (pill_width - 3.0);
                 } else {
-                    c.cairo_set_source_rgba(cr, 0.8, 0.8, 0.8, 0.8);
+                    c.cairo_set_source_rgba(cr, 0.8, 0.8, 0.8, 0.6);
+                    c.cairo_arc(cr, current_dot_x, @as(f64, @floatFromInt(h)) - 3.0, 1.5, 0, 2.0 * std.math.pi);
+                    current_dot_x += dot_spacing;
                 }
                 c.cairo_fill(cr);
             }
@@ -215,6 +237,20 @@ pub fn draw(
     const settings_x = toggle_start;
     const settings_surf = icon.load("preferences-system", DOCK_ICON_SIZE);
     c.cairo_set_source_surface(cr, settings_surf, settings_x, @floatFromInt(tcy));
+    c.cairo_paint(cr);
+
+    // App-launcher toggle (Plank/Crystal-Dock equivalent): opens the system
+    // app launcher so any installed application can be launched even if it is
+    // not pinned. Placed to the right of the settings toggle.
+    const launcher_x = settings_x + DOCK_ICON_SIZE + PAD;
+    const launcher_surf = icon.load("view-app-grid-symbolic", DOCK_ICON_SIZE);
+    c.cairo_set_source_surface(cr, launcher_surf, launcher_x, @floatFromInt(tcy));
+    c.cairo_paint(cr);
+
+    // Home toggle — shows the full app grid in a floating panel above the dock.
+    const home_x = launcher_x + DOCK_ICON_SIZE + PAD;
+    const home_surf = icon.load("applications-other", DOCK_ICON_SIZE);
+    c.cairo_set_source_surface(cr, home_surf, home_x, @floatFromInt(tcy));
     c.cairo_paint(cr);
 }
 
@@ -259,7 +295,7 @@ pub fn iconAt(w: i32, _: i32, tops: []toplevel.ToplevelInfo, top_count: i32, mou
     var total_w: f64 = 0;
     const slot: f64 = DOCK_ICON_SIZE + PAD;
     const unscaled_total: f64 = if (num_items > 0) @as(f64, @floatFromInt(num_items)) * slot - PAD else 0;
-    const toggles_w: f64 = PAD * 3.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 2));
+    const toggles_w: f64 = PAD * 4.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 3));
     const unscaled_block_w = unscaled_total + toggles_w;
     const unscaled_start_x: f64 = @max(0, (@as(f64, @floatFromInt(w)) - unscaled_block_w) / 2.0);
 
@@ -279,11 +315,24 @@ pub fn iconAt(w: i32, _: i32, tops: []toplevel.ToplevelInfo, top_count: i32, mou
     const icon_right = @max(0, (@as(f64, @floatFromInt(w)) - block_w) / 2.0) + total_w;
     const toggle_start = icon_right + PAD;
     const settings_x = toggle_start;
+    const launcher_x = settings_x + @as(f64, @floatFromInt(DOCK_ICON_SIZE)) + PAD;
+    const home_x = launcher_x + @as(f64, @floatFromInt(DOCK_ICON_SIZE)) + PAD;
 
     // Check the settings toggle, placed to the right of the running apps,
     // matching the draw() geometry.
     if (mx >= settings_x and mx < settings_x + @as(f64, @floatFromInt(DOCK_ICON_SIZE))) {
         return -2; // settings toggle
+    }
+
+    // Check the app-launcher toggle (Plank/Crystal-Dock equivalent): opens
+    // the system-wide launcher so unpinned apps can be launched.
+    if (mx >= launcher_x and mx < launcher_x + @as(f64, @floatFromInt(DOCK_ICON_SIZE))) {
+        return -4; // app-launcher toggle
+    }
+
+    // Check the home toggle: opens the full app grid in a floating launcher.
+    if (mx >= home_x and mx < home_x + @as(f64, @floatFromInt(DOCK_ICON_SIZE))) {
+        return -5; // home / app-grid toggle
     }
 
     var app_x = @max(0, (@as(f64, @floatFromInt(w)) - block_w) / 2.0);
@@ -315,7 +364,7 @@ pub fn groupAt(w: i32, mouse_x: i32) i32 {
     var total_w: f64 = 0;
     const slot: f64 = DOCK_ICON_SIZE + PAD;
     const unscaled_total: f64 = @as(f64, @floatFromInt(persistent_count)) * slot - PAD;
-    const toggles_w: f64 = PAD * 3.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 2));
+    const toggles_w: f64 = PAD * 4.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 3));
     const unscaled_block_w = unscaled_total + toggles_w;
     const unscaled_start_x: f64 = @max(0, (@as(f64, @floatFromInt(w)) - unscaled_block_w) / 2.0);
 
@@ -446,7 +495,7 @@ fn testDockLayout(w: i32, num_items: usize, mx: f64) struct {
     var total_w: f64 = 0;
     const slot: f64 = DOCK_ICON_SIZE + PAD;
     const unscaled_total: f64 = if (num_items > 0) @as(f64, @floatFromInt(num_items)) * slot - PAD else 0;
-    const toggles_w: f64 = PAD * 3.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 2));
+    const toggles_w: f64 = PAD * 4.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 3));
     const unscaled_block_w = unscaled_total + toggles_w;
     const unscaled_start_x: f64 = @max(0, (@as(f64, @floatFromInt(w)) - unscaled_block_w) / 2.0);
     for (0..num_items) |g| {
@@ -556,7 +605,7 @@ test "dock groupAt logic" {
     const w: i32 = 1920;
     const icon_sz: f64 = @floatFromInt(DOCK_ICON_SIZE);
     const slot: f64 = icon_sz + PAD;
-    const toggles_w: f64 = PAD * 3.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 2));
+    const toggles_w: f64 = PAD * 4.0 + @as(f64, @floatFromInt(DOCK_ICON_SIZE * 3));
     const unscaled_total: f64 = 3.0 * slot - PAD + toggles_w;
     const start_x: f64 = @max(0, (@as(f64, @floatFromInt(w)) - unscaled_total) / 2.0);
 

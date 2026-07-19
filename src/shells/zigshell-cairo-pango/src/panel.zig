@@ -1,15 +1,13 @@
 const std = @import("std");
 const c = @import("c.zig").c;
-const toplevel = @import("shellcore").toplevel;
 const sysread = @import("shellcore").sysread;
-const icon = @import("icon.zig");
+const theme = @import("theme.zig");
 
 pub const MAX_WIDGETS = 64;
 
 /// Every widget type, used to populate the "Add Widget" menu in settings.
 pub const AllWidgetTypes = [_]WidgetType{
     .workspaces,
-    .toplevel_task,
     .launcher,
     .cpu,
     .mem,
@@ -29,6 +27,7 @@ pub const AllWidgetTypes = [_]WidgetType{
     .backlight,
     .session,
     .versions,
+    .settings,
 };
 
 const spawn_log = std.log.scoped(.spawn);
@@ -60,7 +59,6 @@ pub fn spawnCmd(cmd: [*c]const u8) bool {
 
 pub const WidgetType = enum {
     workspaces,
-    toplevel_task,
     launcher,
     cpu,
     mem,
@@ -76,10 +74,12 @@ pub const WidgetType = enum {
     kbindicator,
     customcommand,
     showdesktop,
+    wallpaper,
     worldclock,
     backlight,
     session,
     versions,
+    settings,
 };
 
 pub const Widget = struct {
@@ -98,6 +98,8 @@ pub const Widget = struct {
     click_fn: ?*const fn (*Widget, u32, i32, i32) bool = null,
     // key: handle key press, return true if consumed
     key_fn: ?*const fn (*Widget, u32, u32) bool = null,
+    // scroll: handle scroll event (dir: 1 for up, -1 for down), return true if consumed
+    scroll_fn: ?*const fn (*Widget, i32) bool = null,
 
     // Private data
     priv: ?*anyopaque = null,
@@ -105,9 +107,9 @@ pub const Widget = struct {
     // Workspaces
     ws_labels: [64]u8 = std.mem.zeroes([64]u8),
 
-    // CPU
-    cpu_prev_total: i32 = 0,
-    cpu_prev_idle: i32 = 0,
+    // CPU (i64 to avoid overflow panic on long-running systems — issue #28)
+    cpu_prev_total: i64 = 0,
+    cpu_prev_idle: i64 = 0,
     cpu_txt: [32]u8 = std.mem.zeroes([32]u8),
 
     // Memory
@@ -160,23 +162,28 @@ pub const Widget = struct {
     // Backlight
     bl_lvl: i32 = -1,
 
+    // Versions (wayland + compositor)
+    ver_txt: [32]u8 = std.mem.zeroes([32]u8),
+
     // Network monitor
     net_rx_prev: u64 = 0,
     net_tx_prev: u64 = 0,
     net_iface: [32]u8 = std.mem.zeroes([32]u8),
     net_hist_rx: [16]f64 = std.mem.zeroes([16]f64),
     net_hist_tx: [16]f64 = std.mem.zeroes([16]f64),
+    net_retry_tick: u32 = 0,
+
+    // Per-day bandwidth tracker (resets at midnight)
+    net_day_rx: u64 = 0,
+    net_day_tx: u64 = 0,
+    net_hist_day_rx: [7]u64 = .{0} ** 7,
+    net_hist_day_tx: [7]u64 = .{0} ** 7,
+    net_day_idx: i64 = -1, // (tm_year * 366 + tm_yday) last checked
+    net_save_tick: u32 = 0,
 
     // Visibility — when true the widget is omitted from the bar but still
     // listed (and reorderable) in the settings panel.
     hidden: bool = false,
-};
-
-pub const PanelCtx = struct {
-    toplevels: []toplevel.ToplevelInfo,
-    count: *i32,
-    seat: ?*c.wl_seat,
-    panel_height: i32 = 24,
 };
 
 // ---- Text Rendering Helpers ----
@@ -218,93 +225,50 @@ fn wsMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 
 fn wsDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    _ = widgetText(cr, @ptrCast(&w.ws_labels), x, h, "Sans 10", 0.6, 0.6, 0.7);
+    _ = widgetText(cr, @ptrCast(&w.ws_labels), x, h, "Sans 10", theme.current.text_dim_color[0], theme.current.text_dim_color[1], theme.current.text_dim_color[2]);
 }
 
-fn wsClick(w: *Widget, btn: u32, _: i32, _: i32) bool {
-    _ = w;
+fn wsClick(w: *Widget, btn: u32, lx: i32, _: i32) bool {
     if (btn != 1) return false;
-    // Click on workspace label switches workspace via wlrctl or swaymsg
-    _ = spawn("wlrctl workgroup next");
+    // Count workspace labels (digits in ws_labels)
+    var ws_count: i32 = 0;
+    for (w.ws_labels) |ch| {
+        if (ch >= '1' and ch <= '9') ws_count += 1;
+    }
+    if (ws_count == 0) return false;
+
+    // Estimate workspace width from label string (Sans 10 ≈ 7px/char)
+    const label_len = std.mem.indexOfScalar(u8, &w.ws_labels, 0) orelse w.ws_labels.len;
+    const total_w = @as(i32, @intCast(label_len)) * 7 + 8;
+    const ws_w = @divTrunc(total_w, ws_count);
+    const ws_idx = @divTrunc(lx, ws_w);
+    const target = @max(1, @min(ws_idx + 1, ws_count));
+
+    // Switch to the clicked workspace
+    var cmd: [48]u8 = std.mem.zeroes([48]u8);
+    _ = std.fmt.bufPrintZ(&cmd, "wlrctl workgroup focus {d}", .{target}) catch return false;
+    _ = spawn(@ptrCast(&cmd));
     return true;
 }
 
-fn tlMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    if (w.priv == null) return 0;
-    const ctx: *PanelCtx = @ptrCast(@alignCast(w.priv.?));
-    const icon_size = h - 6;
-    if (ctx.count.* == 0) return 0;
-    return ctx.count.* * (icon_size + 4);
-}
-
-fn tlDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
-    if (w.priv == null) return;
-    const ctx: *PanelCtx = @ptrCast(@alignCast(w.priv.?));
-    const icon_size = h - 6;
-    const cy = y + @divTrunc(h - icon_size, 2);
-
-    for (0..@intCast(ctx.count.*)) |i| {
-        const icon_x = x + @as(i32, @intCast(i)) * (icon_size + 4);
-        const name_slice = ctx.toplevels[i].app_id[0..std.mem.indexOfScalar(u8, &ctx.toplevels[i].app_id, 0) orelse ctx.toplevels[i].app_id.len];
-        const title_slice = ctx.toplevels[i].title[0..std.mem.indexOfScalar(u8, &ctx.toplevels[i].title, 0) orelse ctx.toplevels[i].title.len];
-        const name = if (name_slice.len > 0) name_slice else title_slice;
-
-        // Null-terminate before icon.load so we don't rely on the backing
-        // buffer being NUL-terminated (issue #21).
-        var name_buf: [256]u8 = std.mem.zeroes([256]u8);
-        const name_z = std.fmt.bufPrintZ(&name_buf, "{s}", .{name}) catch "unknown";
-        const icon_surf = icon.load(name_z, icon_size);
-
-        c.cairo_set_source_surface(cr, icon_surf, @floatFromInt(icon_x), @floatFromInt(cy));
-        c.cairo_paint(cr);
-
-        // Focus indicator
-        if (ctx.toplevels[i].focused) {
-            c.cairo_set_source_rgb(cr, 0.3, 0.5, 0.9);
-            c.cairo_rectangle(cr, @floatFromInt(icon_x + 2), @floatFromInt(h - 4), @floatFromInt(icon_size - 4), 2);
-            c.cairo_fill(cr);
-        }
-    }
-}
-
-fn tlClick(w: *Widget, btn: u32, lx: i32, ly: i32) bool {
-    _ = ly;
-    if (w.priv == null) return false;
-    const ctx: *PanelCtx = @ptrCast(@alignCast(w.priv.?));
-    const icon_size = ctx.panel_height - 6;
-    const idx = @divTrunc(lx, icon_size + 4);
-    if (idx >= 0 and idx < ctx.count.*) {
-        const handle: ?*c.zwlr_foreign_toplevel_handle_v1 = @ptrCast(@alignCast(ctx.toplevels[@intCast(idx)].handle));
-        if (btn == 1) { // Left click
-            if (ctx.seat) |seat| {
-                _ = c.zwlr_foreign_toplevel_handle_v1_activate(handle, seat);
-            }
-        } else if (btn == 3 or btn == 274) { // Right or Middle click
-            _ = c.zwlr_foreign_toplevel_handle_v1_close(handle);
-        }
-        return true;
-    }
-    return false;
-}
-
 fn launcherMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    _ = w;
+    const wpx = widgetTextWidth(cr, "zigshell-cairo-pango", "Sans Bold 11");
+    if (wpx > 0) return wpx + 8;
     return 150;
 }
 
 fn launcherDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = w;
     _ = y;
-    _ = widgetText(cr, "zigshell-cairo-pango", x + 4, h, "Sans Bold 11", 0.9, 0.9, 0.95);
+    _ = widgetText(cr, "zigshell-cairo-pango", x + 4, h, "Sans Bold 11", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn launcherClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     // Launch the command (fuzzel by default)
     _ = spawn(@ptrCast(&w.cmd));
     return true;
@@ -314,14 +278,15 @@ fn cpuUpdate(w: *Widget) void {
     var pt: i64 = w.cpu_prev_total;
     var pi: i64 = w.cpu_prev_idle;
     sysread.cpu(&w.cpu_txt, &pt, &pi);
-    w.cpu_prev_total = @intCast(pt);
-    w.cpu_prev_idle = @intCast(pi);
+    w.cpu_prev_total = pt;
+    w.cpu_prev_idle = pi;
 }
 
 fn cpuMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Measure the 60px bar + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.cpu_txt), "Sans Bold 9");
+    if (wpx > 0) return @max(60, wpx + 8);
     return 60;
 }
 
@@ -329,7 +294,7 @@ fn cpuDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     const bar_w: f64 = 60.0;
     const bar_h: f64 = @floatFromInt(h - 16);
     const bar_y: f64 = @floatFromInt(y + 8);
-    c.cairo_set_source_rgb(cr, 0.15, 0.15, 0.2);
+    theme.setSource(cr, theme.current.bg_gradient_end);
     c.cairo_rectangle(cr, @floatFromInt(x), bar_y, bar_w, bar_h);
     c.cairo_fill(cr);
 
@@ -337,24 +302,24 @@ fn cpuDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     if (c.sscanf(&w.cpu_txt, "CPU %lf%%", &pct) == 1) {
         const fill_w = bar_w * pct / 100.0;
         if (pct < 50.0) {
-            c.cairo_set_source_rgb(cr, 0.3, 0.8, 0.5);
+            theme.setSource(cr, theme.current.success_color);
         } else if (pct < 80.0) {
-            c.cairo_set_source_rgb(cr, 0.9, 0.7, 0.2);
+            theme.setSource(cr, theme.current.warning_color);
         } else {
-            c.cairo_set_source_rgb(cr, 0.9, 0.2, 0.2);
+            theme.setSource(cr, theme.current.danger_color);
         }
         c.cairo_rectangle(cr, @floatFromInt(x), bar_y, fill_w, bar_h);
         c.cairo_fill(cr);
     }
     
-    _ = widgetText(cr, @ptrCast(&w.cpu_txt), x + 4, h, "Sans Bold 9", 1.0, 1.0, 1.0);
+    _ = widgetText(cr, @ptrCast(&w.cpu_txt), x + 4, h, "Sans Bold 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn cpuClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("foot btop &");
     return true;
 }
@@ -364,9 +329,10 @@ fn memUpdate(w: *Widget) void {
 }
 
 fn memMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Measure the 70px bar + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.mem_txt), "Sans Bold 9");
+    if (wpx > 0) return @max(70, wpx + 8);
     return 70;
 }
 
@@ -375,26 +341,26 @@ fn memDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     const bar_h: f64 = @floatFromInt(h - 16);
     const bar_y: f64 = @floatFromInt(y + 8);
     
-    c.cairo_set_source_rgb(cr, 0.15, 0.15, 0.2);
+    theme.setSource(cr, theme.current.bg_gradient_end);
     c.cairo_rectangle(cr, @floatFromInt(x), bar_y, bar_w, bar_h);
     c.cairo_fill(cr);
 
     var pct: f64 = 0;
     if (c.sscanf(&w.mem_txt, "MEM %lf%%", &pct) == 1) {
         const fill_w = bar_w * pct / 100.0;
-        c.cairo_set_source_rgb(cr, 0.4, 0.6, 0.9);
+        theme.setSource(cr, theme.current.accent_color);
         c.cairo_rectangle(cr, @floatFromInt(x), bar_y, fill_w, bar_h);
         c.cairo_fill(cr);
     }
     
-    _ = widgetText(cr, @ptrCast(&w.mem_txt), x + 4, h, "Sans Bold 9", 1.0, 1.0, 1.0);
+    _ = widgetText(cr, @ptrCast(&w.mem_txt), x + 4, h, "Sans Bold 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn memClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("foot htop &");
     return true;
 }
@@ -404,53 +370,56 @@ fn tempUpdate(w: *Widget) void {
 }
 
 fn tempMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Measure glyph icon (16px) + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.temp_txt), "Sans 9");
+    if (wpx > 0) return wpx + 18;
     return 56;
 }
 
 fn tempDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    widgetIconGlyph(cr, "♨", x, h, 0.9, 0.6, 0.4);
-    _ = widgetText(cr, @ptrCast(&w.temp_txt), x + 16, h, "Sans 9", 0.8, 0.8, 0.82);
+    widgetIconGlyph(cr, "♨", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.temp_txt), x + 16, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn tempClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("foot sensors &");
     return true;
 }
 
 fn diskMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Measure glyph icon (16px) + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.disk_txt), "Sans 9");
+    if (wpx > 0) return wpx + 18;
     return 64;
 }
 
 fn diskDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    widgetIconGlyph(cr, "▥", x, h, 0.5, 0.8, 0.6);
-    _ = widgetText(cr, @ptrCast(&w.disk_txt), x + 16, h, "Sans 9", 0.8, 0.8, 0.82);
+    widgetIconGlyph(cr, "▥", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.disk_txt), x + 16, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn diskClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("pcmanfm-qt &");
     return true;
 }
 
 fn batMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Battery icon (24px) + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.bat_txt), "Sans 9");
+    if (wpx > 0) return wpx + 32;
     return 64;
 }
 
@@ -458,31 +427,39 @@ fn batDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     const bat_w: f64 = 24.0;
     const bat_h: f64 = 14.0;
     const bat_y: f64 = @floatFromInt(y + @divTrunc(h - 14, 2));
-    
+
     // Outline
-    c.cairo_set_source_rgb(cr, 0.6, 0.6, 0.65);
+    theme.setSource(cr, theme.current.border_color);
     c.cairo_set_line_width(cr, 1.5);
     c.cairo_rectangle(cr, @as(f64, @floatFromInt(x)), bat_y, bat_w, bat_h);
     c.cairo_stroke(cr);
-    
+
     // Nub
     c.cairo_rectangle(cr, @as(f64, @floatFromInt(x)) + bat_w, bat_y + 4.0, 2.0, bat_h - 8.0);
     c.cairo_fill(cr);
 
     if (w.bat_lvl >= 0) {
         const fill_w = (bat_w - 4.0) * @as(f64, @floatFromInt(w.bat_lvl)) / 100.0;
-        if (w.bat_lvl > 50) {
-            c.cairo_set_source_rgb(cr, 0.3, 0.8, 0.5);
+        if (w.bat_charging) {
+            // Charging: pulsing green (brighter than normal success)
+            c.cairo_set_source_rgb(cr, 0.2, 0.9, 0.4);
+        } else if (w.bat_lvl > 50) {
+            theme.setSource(cr, theme.current.success_color);
         } else if (w.bat_lvl > 20) {
-            c.cairo_set_source_rgb(cr, 0.9, 0.7, 0.2);
+            theme.setSource(cr, theme.current.warning_color);
         } else {
-            c.cairo_set_source_rgb(cr, 0.9, 0.2, 0.2);
+            theme.setSource(cr, theme.current.danger_color);
         }
         c.cairo_rectangle(cr, @as(f64, @floatFromInt(x)) + 2.0, bat_y + 2.0, fill_w, bat_h - 4.0);
         c.cairo_fill(cr);
     }
 
-    _ = widgetText(cr, @ptrCast(&w.bat_txt), x + 30, h, "Sans 9", 0.8, 0.8, 0.82);
+    // Charging indicator: small lightning bolt when charging
+    if (w.bat_charging) {
+        widgetIconGlyph(cr, "⚡", x + @as(i32, @intFromFloat(bat_w)) + 4, h, 0.9, 0.8, 0.2);
+    }
+
+    _ = widgetText(cr, @ptrCast(&w.bat_txt), x + 30, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn batUpdate(w: *Widget) void {
@@ -493,28 +470,29 @@ fn batClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("foot upower -i /org/freedesktop/UPower/devices/battery_BAT0 &");
     return true;
 }
 
 fn volMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
-    _ = w;
     _ = h;
+    // Icon glyph (18px) + text width for accurate layout
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.vol_txt), "Sans 9");
+    if (wpx > 0) return wpx + 20;
     return 64;
 }
 
 fn volDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    widgetIconGlyph(cr, if (w.vol_mute) "🔇" else "🔊", x, h, 0.6, 0.8, 0.9);
-    _ = widgetText(cr, @ptrCast(&w.vol_txt), x + 18, h, "Sans 9", 0.8, 0.8, 0.82);
+    widgetIconGlyph(cr, if (w.vol_mute) "🔇" else "🔊", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.vol_txt), x + 18, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn volClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     if (w.vol_mute) {
         _ = spawn("pactl set-sink-mute @DEFAULT_SINK@ 0 &");
     } else {
@@ -523,15 +501,72 @@ fn volClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     return true;
 }
 
-fn netMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
+// P3: reflect the real sink volume/mute so the widget isn't stuck at the
+// default until first click. pactl may be absent (e.g. PipeWire via wpctl);
+// failures silently keep the previous state.
+fn volUpdate(w: *Widget) void {
+    var mute: [16]u8 = std.mem.zeroes([16]u8);
+    if (captureCmd("pactl get-sink-mute 2>/dev/null || wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null", &mute) > 0) {
+        const m = std.mem.sliceTo(&mute, 0);
+        w.vol_mute = std.mem.indexOf(u8, m, "yes") != null or std.mem.indexOf(u8, m, "[MUTED]") != null;
+    }
+    var vol: [32]u8 = std.mem.zeroes([32]u8);
+    if (captureCmd("pactl get-sink-volume 2>/dev/null || wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null", &vol) > 0) {
+        const v = std.mem.sliceTo(&vol, 0);
+        // Try pactl format first (e.g. "69%").
+        var it = std.mem.tokenizeAny(u8, v, " /%");
+        var found: u32 = 0;
+        while (it.next()) |tok| {
+            if (std.fmt.parseUnsigned(u32, tok, 10)) |pct| {
+                if (pct <= 150) {
+                    found = pct;
+                    break;
+                }
+            } else |_| {}
+        }
+        // If pactl format gave 0, try wpctl fraction format (e.g. "0.45" → 45%).
+        if (found == 0) {
+            if (std.mem.indexOfScalar(u8, v, '.')) |_| {
+                var fit = std.mem.tokenizeScalar(u8, v, ' ');
+                while (fit.next()) |tok| {
+                    if (std.fmt.parseFloat(f64, tok)) |frac| {
+                        if (frac > 0 and frac <= 1.0) {
+                            found = @intFromFloat(frac * 100.0);
+                            break;
+                        }
+                    } else |_| {}
+                }
+            }
+        }
+        if (found > 0 and found <= 150) {
+            _ = std.fmt.bufPrintZ(&w.vol_txt, "{d}%", .{found}) catch {};
+        }
+    }
+}
+
+fn volScroll(w: *Widget, dir: i32) bool {
     _ = w;
+    if (dir > 0) {
+        _ = spawn("pactl set-sink-volume @DEFAULT_SINK@ +5% &");
+    } else if (dir < 0) {
+        _ = spawn("pactl set-sink-volume @DEFAULT_SINK@ -5% &");
+    }
+    return true;
+}
+
+fn netMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
     _ = h;
-    return 110;
+    // Sparkline (56) + gap + text (measured) + padding
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.net_txt), "Sans 8");
+    if (wpx > 0) return @max(wpx + 80, 80);
+    const len = std.mem.indexOfScalar(u8, &w.net_txt, 0) orelse w.net_txt.len;
+    return @intCast(@max(@as(i32, @intCast(len)) * 5 + 80, 80));
 }
 
 fn netUpdate(w: *Widget) void {
     if (w.net_iface[0] == 0) {
+        w.net_retry_tick +%= 1;
+        if (w.net_retry_tick > 0 and w.net_retry_tick % 30 != 0) return;
         if (!sysread.netPickInterface(&w.net_iface)) return;
     }
     const sample = sysread.netSample(std.mem.sliceTo(&w.net_iface, 0));
@@ -539,34 +574,169 @@ fn netUpdate(w: *Widget) void {
 
     const rx = sample.rx_bytes;
     const tx = sample.tx_bytes;
-    if (w.net_rx_prev != 0) {
-        const drx = rx -% w.net_rx_prev;
-        const dtx = tx -% w.net_tx_prev;
-        const rx_kb = @as(f64, @floatFromInt(drx)) / 1024.0;
-        const tx_kb = @as(f64, @floatFromInt(dtx)) / 1024.0;
-        var k: usize = 0;
-        while (k < 15) : (k += 1) {
-            w.net_hist_rx[k] = w.net_hist_rx[k + 1];
-            w.net_hist_tx[k] = w.net_hist_tx[k + 1];
+
+    // --- Per-day bandwidth tracker: init/rollover ---
+    const t = c.time(null);
+    var tm: c.struct_tm = std.mem.zeroes(c.struct_tm);
+    _ = c.localtime_r(&t, &tm);
+    const day_idx = @as(i64, tm.tm_year) * 366 + @as(i64, tm.tm_yday);
+
+    if (w.net_day_idx == -1) {
+        loadNetBandwidth(w);
+        if (w.net_day_idx != -1 and w.net_day_idx != day_idx) {
+            const days_gap = @as(u64, @intCast(day_idx - w.net_day_idx));
+            if (days_gap >= 7) {
+                w.net_hist_day_rx = .{0} ** 7;
+                w.net_hist_day_tx = .{0} ** 7;
+            } else if (w.net_day_idx != -1) {
+                var si: u64 = 0;
+                while (si < 7 - days_gap) : (si += 1) {
+                    w.net_hist_day_rx[si] = w.net_hist_day_rx[si + days_gap];
+                    w.net_hist_day_tx[si] = w.net_hist_day_tx[si + days_gap];
+                }
+                while (si < 7) : (si += 1) {
+                    w.net_hist_day_rx[si] = 0;
+                    w.net_hist_day_tx[si] = 0;
+                }
+            }
+            w.net_day_rx = 0;
+            w.net_day_tx = 0;
         }
-        w.net_hist_rx[15] = rx_kb;
-        w.net_hist_tx[15] = tx_kb;
-        _ = std.fmt.bufPrintZ(&w.net_txt, "{d:.0}/{d:.0} KB/s", .{ rx_kb, tx_kb }) catch |err| {
-            std.log.err("net text format error: {}", .{err});
-        };
+        w.net_day_idx = day_idx;
+    } else if (day_idx != w.net_day_idx) {
+        var si: usize = 0;
+        while (si < 6) : (si += 1) {
+            w.net_hist_day_rx[si] = w.net_hist_day_rx[si + 1];
+            w.net_hist_day_tx[si] = w.net_hist_day_tx[si + 1];
+        }
+        w.net_hist_day_rx[6] = w.net_day_rx;
+        w.net_hist_day_tx[6] = w.net_day_tx;
+        w.net_day_rx = 0;
+        w.net_day_tx = 0;
+        w.net_day_idx = day_idx;
     }
+
+    if (w.net_rx_prev == 0) {
+        w.net_rx_prev = rx;
+        w.net_tx_prev = tx;
+        return;
+    }
+    const drx = rx -% w.net_rx_prev;
+    const dtx = tx -% w.net_tx_prev;
+    const rx_kb = @as(f64, @floatFromInt(drx)) / 1024.0;
+    const tx_kb = @as(f64, @floatFromInt(dtx)) / 1024.0;
+    var k: usize = 0;
+    while (k < 15) : (k += 1) {
+        w.net_hist_rx[k] = w.net_hist_rx[k + 1];
+        w.net_hist_tx[k] = w.net_hist_tx[k + 1];
+    }
+    w.net_hist_rx[15] = rx_kb;
+    w.net_hist_tx[15] = tx_kb;
+
+    // Accumulate into daily totals (wrapping-safe; reset at midnight).
+    w.net_day_rx +%= drx;
+    w.net_day_tx +%= dtx;
+
+    // Persist every ~60 ticks.
+    w.net_save_tick +%= 1;
+    if (w.net_save_tick % 60 == 0) saveNetBandwidth(w);
+
+    // Build net_txt: rate + daily Dn/Up + weekly total.
+    _ = std.fmt.bufPrintZ(&w.net_txt, "{d:.0}/{d:.0}  ", .{ rx_kb, tx_kb }) catch |err| {
+        std.log.err("net text format error: {}", .{err});
+        return;
+    };
+    const pos = std.mem.indexOfScalar(u8, &w.net_txt, 0) orelse w.net_txt.len;
+
+    var day_buf: [24]u8 = undefined;
+    var wk_buf: [24]u8 = undefined;
+    const drx_str = formatBytes(w.net_day_rx, &day_buf);
+    const dtx_str = formatBytes(w.net_day_tx, day_buf[drx_str.len..]);
+
+    var wk_total: u64 = 0;
+    for (w.net_hist_day_rx) |v| wk_total +%= v;
+    for (w.net_hist_day_tx) |v| wk_total +%= v;
+    const wk_str = formatBytes(wk_total +% w.net_day_rx +% w.net_day_tx, &wk_buf);
+
+    @memset(w.net_txt[pos..], 0);
+    _ = std.fmt.bufPrint(w.net_txt[pos..], "D:{s}\u{2193}{s}\u{2191} W:{s}", .{ drx_str, dtx_str, wk_str }) catch {};
+
     w.net_rx_prev = rx;
     w.net_tx_prev = tx;
 }
 
+fn formatBytes(bytes: u64, buf: []u8) []u8 {
+    const units = [_][]const u8{ "B", "K", "M", "G", "T" };
+    if (bytes == 0) {
+        if (buf.len > 0) buf[0] = '0';
+        return buf[0..1];
+    }
+    var v: f64 = @floatFromInt(bytes);
+    var ui: usize = 0;
+    while (v >= 1024.0 and ui < units.len - 1) : (ui += 1) v /= 1024.0;
+    if (ui == 0) {
+        _ = std.fmt.bufPrint(buf, "{d}B", .{bytes}) catch return buf[0..0];
+    } else if (v < 10.0) {
+        _ = std.fmt.bufPrint(buf, "{d:.1}{s}", .{ v, units[ui] }) catch return buf[0..0];
+    } else {
+        _ = std.fmt.bufPrint(buf, "{d:.0}{s}", .{ v, units[ui] }) catch return buf[0..0];
+    }
+    return std.mem.sliceTo(buf, 0);
+}
+
+fn getNetBandwidthPathOut(out: *[256]u8) []u8 {
+    if (c.getenv("XDG_CONFIG_HOME")) |x| {
+        const dir = std.mem.sliceTo(x, 0);
+        _ = std.fmt.bufPrintZ(out, "{s}/zigshell/netbandwidth.dat", .{dir}) catch return out[0..0];
+    } else {
+        const home_raw = c.getenv("HOME");
+        const home = if (home_raw != null) std.mem.sliceTo(home_raw.?, 0) else "/tmp";
+        _ = std.fmt.bufPrintZ(out, "{s}/.config/zigshell/netbandwidth.dat", .{home}) catch return out[0..0];
+    }
+    return out;
+}
+
+fn saveNetBandwidth(w: *Widget) void {
+    var pbuf: [256]u8 = std.mem.zeroes([256]u8);
+    _ = getNetBandwidthPathOut(&pbuf);
+    const f = c.fopen(@as([*:0]const u8, @ptrCast(&pbuf)), "wb") orelse return;
+    defer _ = c.fclose(f);
+    const magic: u32 = 0x4E455442;
+    const ver: u32 = 1;
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&magic)), 4, 1, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&ver)), 4, 1, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&w.net_day_rx)), 8, 1, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&w.net_day_tx)), 8, 1, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&w.net_hist_day_rx)), 8, 7, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&w.net_hist_day_tx)), 8, 7, f);
+    _ = c.fwrite(@as(*const anyopaque, @ptrCast(&w.net_day_idx)), 8, 1, f);
+}
+
+fn loadNetBandwidth(w: *Widget) void {
+    var pbuf: [256]u8 = std.mem.zeroes([256]u8);
+    _ = getNetBandwidthPathOut(&pbuf);
+    const f = c.fopen(@as([*:0]const u8, @ptrCast(&pbuf)), "rb") orelse return;
+    defer _ = c.fclose(f);
+    var magic: u32 = 0;
+    var ver: u32 = 0;
+    if (c.fread(@as(*anyopaque, @ptrCast(&magic)), 4, 1, f) != 1) return;
+    if (c.fread(@as(*anyopaque, @ptrCast(&ver)), 4, 1, f) != 1) return;
+    if (magic != 0x4E455442 or ver != 1) return;
+    _ = c.fread(@as(*anyopaque, @ptrCast(&w.net_day_rx)), 8, 1, f);
+    _ = c.fread(@as(*anyopaque, @ptrCast(&w.net_day_tx)), 8, 1, f);
+    _ = c.fread(@as(*anyopaque, @ptrCast(&w.net_hist_day_rx)), 8, 7, f);
+    _ = c.fread(@as(*anyopaque, @ptrCast(&w.net_hist_day_tx)), 8, 7, f);
+    _ = c.fread(@as(*anyopaque, @ptrCast(&w.net_day_idx)), 8, 1, f);
+}
+
 fn netDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    widgetIconGlyph(cr, "📶", x, h, 0.5, 0.9, 0.6);
+    widgetIconGlyph(cr, "📶", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 
     // Sparkline of rx (top) and tx (bottom)
     const sp_x = x + 18;
     const sp_w: f64 = 56.0;
-    const sp_h: f64 = @floatFromInt(h - 18);
+    const sp_h: f64 = @floatFromInt(@max(h - 18, 1));
     const sp_y: f64 = @floatFromInt(@divTrunc(h - 18, 2) + 2);
 
     var maxv: f64 = 1.0;
@@ -578,29 +748,31 @@ fn netDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     while (k < 16) : (k += 1) {
         const rxh = (w.net_hist_rx[k] / maxv) * sp_h * 0.5;
         const txh = (w.net_hist_tx[k] / maxv) * sp_h * 0.5;
-        c.cairo_set_source_rgb(cr, 0.3, 0.8, 0.5);
+        theme.setSource(cr, theme.current.success_color);
         c.cairo_rectangle(cr, @as(f64, @floatFromInt(sp_x)) + @as(f64, @floatFromInt(k)) * bw, sp_y, bw - 1, rxh);
         c.cairo_fill(cr);
-        c.cairo_set_source_rgb(cr, 0.5, 0.7, 0.9);
+        theme.setSource(cr, theme.current.accent_color);
         c.cairo_rectangle(cr, @as(f64, @floatFromInt(sp_x)) + @as(f64, @floatFromInt(k)) * bw, sp_y + sp_h * 0.5, bw - 1, txh);
         c.cairo_fill(cr);
     }
 
-    _ = widgetText(cr, @ptrCast(&w.net_txt), x + 80, h, "Sans 8", 0.8, 0.8, 0.82);
+    _ = widgetText(cr, @ptrCast(&w.net_txt), x + 80, h, "Sans 8", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn netClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("nm-applet &");
     return true;
 }
 
 fn mediaMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
     _ = h;
+    if (w.media_txt[0] == 0) return 0;
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.media_txt), "Sans 9");
+    if (wpx > 0) return wpx + 20;
     const len = std.mem.indexOfScalar(u8, &w.media_txt, 0) orelse w.media_txt.len;
     return @intCast(len * 6 + 20);
 }
@@ -608,38 +780,123 @@ fn mediaMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 fn mediaDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
     if (w.media_txt[0] == 0) return;
-    widgetIconGlyph(cr, if (w.media_playing) "▶" else "❚❚", x, h, 0.9, 0.8, 0.4);
-    _ = widgetText(cr, @ptrCast(&w.media_txt), x + 18, h, "Sans 9", 0.85, 0.85, 0.88);
+    widgetIconGlyph(cr, if (w.media_playing) "▶" else "❚❚", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.media_txt), x + 18, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn mediaClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn("playerctl play-pause &");
     return true;
 }
 
+// P1: poll MPRIS via playerctl so the widget shows the current track/artist
+// instead of staying empty. Runs from widgetListUpdate (1s tick); playerctl may
+// be absent, so failures silently leave the widget empty.
+fn mediaUpdate(w: *Widget) void {
+    var status: [32]u8 = std.mem.zeroes([32]u8);
+    var title: [64]u8 = std.mem.zeroes([64]u8);
+    var artist: [64]u8 = std.mem.zeroes([64]u8);
+    _ = captureCmd("playerctl status 2>/dev/null", &status);
+    _ = captureCmd("playerctl metadata xesam:title 2>/dev/null", &title);
+    _ = captureCmd("playerctl metadata xesam:artist 2>/dev/null", &artist);
+    w.media_playing = std.mem.eql(u8, std.mem.sliceTo(&status, 0), "Playing");
+    if (title[0] == 0) {
+        w.media_txt[0] = 0;
+        return;
+    }
+    const t = std.mem.sliceTo(&title, 0);
+    const a = std.mem.sliceTo(&artist, 0);
+    const written = if (a.len > 0)
+        std.fmt.bufPrint(&w.media_txt, "{s} - {s}", .{ a, t })
+    else
+        std.fmt.bufPrint(&w.media_txt, "{s}", .{t});
+    if (written) |txt| {
+        w.media_txt[txt.len] = 0;
+    } else |_| {
+        @memcpy(&w.media_txt, t.ptr);
+        w.media_txt[t.len] = 0;
+    }
+}
+
+// Run a command, capture its stdout first line into `out` (NUL-terminated).
+// Reuses the temp-file pattern from ccUpdate (issue #19 hardening). Returns the
+// number of bytes written (excluding NUL), or 0 on failure.
+fn captureCmd(cmd: []const u8, out: []u8) usize {
+    var tmpl: [32]u8 = std.mem.zeroes([32]u8);
+    _ = std.fmt.bufPrintZ(&tmpl, "/tmp/.zigshell-cap-XXXXXX", .{}) catch return 0;
+    const fd = c.mkstemp(@ptrCast(&tmpl));
+    if (fd < 0) return 0;
+    _ = c.fchmod(fd, 0o600);
+    _ = c.close(fd);
+    var escaped_cmd: [256]u8 = undefined;
+    var e_idx: usize = 0;
+    for (cmd) |ch| {
+        if (e_idx >= escaped_cmd.len - 4) break;
+        if (ch == '\'') {
+            @memcpy(escaped_cmd[e_idx..e_idx+4], "'\\''");
+            e_idx += 4;
+        } else {
+            escaped_cmd[e_idx] = ch;
+            e_idx += 1;
+        }
+    }
+    const escaped_slice = escaped_cmd[0..e_idx];
+
+    var full: [384]u8 = std.mem.zeroes([384]u8);
+    const full_slice = std.fmt.bufPrintZ(&full, "sh -c '{s}' > '{s}' 2>/dev/null", .{ escaped_slice, std.mem.sliceTo(&tmpl, 0) }) catch {
+        _ = c.unlink(@ptrCast(&tmpl));
+        return 0;
+    };
+    _ = spawn(@ptrCast(&full_slice));
+    const f = c.fopen(@ptrCast(&tmpl), "r") orelse {
+        _ = c.unlink(@ptrCast(&tmpl));
+        return 0;
+    };
+    defer {
+        _ = c.fclose(f);
+        _ = c.unlink(@ptrCast(&tmpl));
+    }
+    var buf: [256]u8 = std.mem.zeroes([256]u8);
+    if (c.fgets(@ptrCast(&buf), buf.len, f)) |line| {
+        const raw = std.mem.sliceTo(line, 0);
+        var end = raw.len;
+        while (end > 0 and (raw[end - 1] == '\n' or raw[end - 1] == '\r')) : (end -= 1) {}
+        const n = @min(end, out.len - 1);
+        @memcpy(out[0..n], raw[0..n]);
+        out[n] = 0;
+        return n;
+    }
+    return 0;
+}
+
 fn clkMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
     _ = h;
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.clock_txt), "Sans 10");
+    if (wpx > 0) return wpx + 16;
     const len = std.mem.indexOfScalar(u8, &w.clock_txt, 0) orelse w.clock_txt.len;
     return @intCast(len * 7 + 16);
 }
 
 fn clkDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    _ = widgetText(cr, @ptrCast(&w.clock_txt), x, h, "Sans 10", 0.85, 0.85, 0.85);
+    _ = widgetText(cr, @ptrCast(&w.clock_txt), x, h, "Sans 10", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 pub var request_calendar_modal: bool = false;
+
+/// Wayland protocol version discovered during registry binding.
+/// Set by main_shell.zig after roundtrip; read by versionsUpdate.
+pub var global_wayland_ver: u32 = 0;
 
 fn clkClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     request_calendar_modal = true;
     return true;
 }
@@ -654,13 +911,13 @@ fn pwrMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 fn pwrDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = w;
     _ = y;
-    widgetIconGlyph(cr, "⏻", x + 4, h, 0.9, 0.5, 0.5);
+    widgetIconGlyph(cr, "⏻", x + 4, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn pwrClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn(@ptrCast(&w.cmd));
     return true;
 }
@@ -682,9 +939,9 @@ fn sessionDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
     const c_open = session_open;
     if (c_open) {
-        widgetIconGlyph(cr, "⏻", x + 4, h, 1.0, 0.85, 0.3);
+        widgetIconGlyph(cr, "⏻", x + 4, h, theme.current.warning_color[0], theme.current.warning_color[1], theme.current.warning_color[2]);
     } else {
-        widgetIconGlyph(cr, "⏻", x + 4, h, 0.9, 0.5, 0.5);
+        widgetIconGlyph(cr, "⏻", x + 4, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
     }
 }
 
@@ -692,29 +949,126 @@ fn sessionClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     session_open = true;
+    return true;
+}
+
+// ---- Settings gear widget (always-present gear icon) ----
+// The main shell checks request_settings_modal after widget dispatch (like
+// request_calendar_modal) so there is no circular import.
+pub var request_settings_modal: bool = false;
+
+fn settingsMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
+    _ = w;
+    _ = h;
+    _ = cr;
+    return 28;
+}
+
+fn settingsDraw(_: *Widget, cr: *c.cairo_t, x: i32, _: i32, h: i32) void {
+    // Small background pill so the gear stands out as a button
+    c.cairo_set_source_rgba(cr, 0.3, 0.3, 0.35, 0.8);
+    c.cairo_rectangle(cr, @floatFromInt(x), 0, 28, @floatFromInt(h));
+    c.cairo_fill(cr);
+
+    widgetIconGlyph(cr, "⚙", x + 4, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+}
+
+fn settingsClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
+    _ = w;
+    _ = x;
+    _ = y;
+    if (btn == 3) {
+        request_settings_modal = true;
+        return true;
+    }
+    if (btn == 272) {
+        // Left-click: launch the GTK settings app (out of process).
+        _ = spawn("zigshell-settings-gtk &");
+        return true;
+    }
+    return false;
+}
+
+fn wallpaperMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
+    _ = w;
+    _ = h;
+    _ = cr;
+    return 28;
+}
+
+fn wallpaperDraw(_: *Widget, cr: *c.cairo_t, x: i32, _: i32, h: i32) void {
+    c.cairo_set_source_rgba(cr, 0.2, 0.5, 0.8, 0.8);
+    c.cairo_rectangle(cr, @floatFromInt(x), 0, 28, @floatFromInt(h));
+    c.cairo_fill(cr);
+
+    widgetIconGlyph(cr, "🖼", x + 4, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+}
+
+fn wallpaperWorker() void {
+    const filters = [_][*:0]const u8{ "*.png", "*.jpg", "*.jpeg", "*.webp" };
+    const res = c.tinyfd_openFileDialog(
+        "Select Wallpaper",
+        "",
+        4,
+        @ptrCast(&filters),
+        "Image files",
+        0,
+    );
+    if (res != null) {
+        var cmd: [1024]u8 = undefined;
+        _ = std.fmt.bufPrintZ(&cmd, "$HOME/dotfiles/wallpaper set '{s}'", .{std.mem.span(res)}) catch return;
+        _ = spawnCmd(@ptrCast(&cmd));
+    }
+}
+
+fn wallpaperClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
+    _ = w;
+    _ = btn;
+    _ = x;
+    _ = y;
+    const thread = std.Thread.spawn(.{}, wallpaperWorker, .{}) catch return true;
+    thread.detach();
     return true;
 }
 
 // ---- Versions widget (wayland + labwc) ----
 
 fn versionsMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = w;
     _ = h;
-    _ = cr;
-    return 80; // Fixed width for "WL:1.26.90 LC:0.8.0"
+    const wpx = widgetTextWidth(cr, @ptrCast(&w.ver_txt), "Sans 9");
+    if (wpx > 0) return wpx + 8;
+    return 80; // Fixed width fallback for "WL:1.26.90 LC:0.8.0"
 }
 
 fn versionsDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    // Display wayland and labwc versions
-    const text = w.net_txt[0..std.mem.indexOfScalar(u8, &w.net_txt, 0) orelse w.net_txt.len];
-    _ = widgetText(cr, @ptrCast(text.ptr), x, h, "Sans 9", 0.6, 0.7, 0.8);
+    // Display wayland and labwc versions (P2/P8: own buffer, real data)
+    const text = w.ver_txt[0..std.mem.indexOfScalar(u8, &w.ver_txt, 0) orelse w.ver_txt.len];
+    _ = widgetText(cr, @ptrCast(text.ptr), x, h, "Sans 9", theme.current.text_dim_color[0], theme.current.text_dim_color[1], theme.current.text_dim_color[2]);
 }
 
 fn versionsUpdate(w: *Widget) void {
-    std.mem.copyForwards(u8, &w.net_txt, "WL:? LC:?");
+    if (w.ver_txt[0] != 0) return;
+    var buf: [256]u8 = std.mem.zeroes([256]u8);
+    if (captureCmd("labwc --version", &buf) == 0) {
+        _ = std.fmt.bufPrintZ(&w.ver_txt, "LC:? WR:?", .{}) catch {};
+        return;
+    }
+    const line = std.mem.sliceTo(&buf, 0);
+    var lv: []const u8 = "?";
+    var wv: []const u8 = "?";
+    var it = std.mem.tokenizeScalar(u8, line, ' ');
+    _ = it.next(); // "labwc"
+    if (it.next()) |tok| lv = tok;
+    // find "wlroots-" in remaining tokens
+    while (it.next()) |tok| {
+        if (std.mem.startsWith(u8, tok, "wlroots-")) {
+            wv = tok["wlroots-".len..];
+        }
+    }
+    _ = std.fmt.bufPrintZ(&w.ver_txt, "LC:{s} WR:{s}", .{ lv, wv }) catch {};
 }
 
 fn versionsClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
@@ -759,38 +1113,80 @@ fn kbMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 }
 
 fn kbUpdate(w: *Widget) void {
-    // Show the layout we last selected (self-contained; external changes
-    // not detected). Parse the comma-separated list at kb_idx.
+    // P7: detect externally-selected layout (e.g. set via another tool) by
+    // parsing `setxkbmap -query`'s `layout:` line, and align kb_idx to it when
+    // it matches one of our configured layouts. Falls back to the last
+    // self-selected index if setxkbmap is absent or reports something unknown.
+    var qbuf: [256]u8 = std.mem.zeroes([256]u8);
+    if (captureCmd("setxkbmap -query 2>/dev/null", &qbuf) > 0) {
+        const q = std.mem.sliceTo(&qbuf, 0);
+        if (std.mem.indexOf(u8, q, "layout:")) |pos| {
+            const rest = q[pos + "layout:".len ..];
+            const eol = std.mem.indexOfScalar(u8, rest, '\n') orelse rest.len;
+            var cur = std.mem.trim(u8, rest[0..eol], " \t");
+            if (std.mem.indexOfScalar(u8, cur, ',')) |comma| cur = cur[0..comma];
+            var seg: usize = 0;
+            var seg_start: usize = 0;
+            var si: usize = 0;
+            while (si < w.kb_layouts.len) : (si += 1) {
+                if (w.kb_layouts[si] == ',') {
+                    const lay = std.mem.trim(u8, w.kb_layouts[seg_start..si], " \t");
+                    if (lay.len > 0 and std.mem.eql(u8, cur, lay)) {
+                        w.kb_idx = @intCast(seg);
+                        break;
+                    }
+                    seg += 1;
+                    seg_start = si + 1;
+                }
+            }
+            // Also check final segment (after last comma).
+            if (seg_start < w.kb_layouts.len) {
+                const lay = std.mem.trim(u8, w.kb_layouts[seg_start..], " \t");
+                if (lay.len > 0 and std.mem.eql(u8, cur, lay)) {
+                    w.kb_idx = @intCast(seg);
+                }
+            }
+        }
+    }
+
+    // Show the layout at kb_idx.
     var i: usize = 0;
     var seg: usize = 0;
-    var start: usize = 0;
-    while (i <= w.kb_layouts.len) : (i += 1) {
-        const eof = i == w.kb_layouts.len;
-        if (eof or w.kb_layouts[i] == ',') {
+    var seg_start: usize = 0;
+    while (i < w.kb_layouts.len) : (i += 1) {
+        if (w.kb_layouts[i] == ',') {
             if (seg == @as(usize, @intCast(w.kb_idx))) {
-                const slice = w.kb_layouts[start..i];
+                const slice = w.kb_layouts[seg_start..i];
                 const n = @min(slice.len, w.kb_txt.len - 1);
                 @memcpy(w.kb_txt[0..n], slice[0..n]);
                 w.kb_txt[n] = 0;
                 return;
             }
             seg += 1;
-            start = i + 1;
+            seg_start = i + 1;
         }
+    }
+    // Final segment (after last comma).
+    if (seg == @as(usize, @intCast(w.kb_idx)) and seg_start < w.kb_layouts.len) {
+        const slice = w.kb_layouts[seg_start..];
+        const n = @min(slice.len, w.kb_txt.len - 1);
+        @memcpy(w.kb_txt[0..n], slice[0..n]);
+        w.kb_txt[n] = 0;
+        return;
     }
     std.mem.copyForwards(u8, &w.kb_txt, "??");
 }
 
 fn kbDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    widgetIconGlyph(cr, "⌨", x, h, 0.7, 0.8, 0.9);
-    _ = widgetText(cr, @ptrCast(&w.kb_txt), x + 18, h, "Sans Bold 10", 0.85, 0.85, 0.9);
+    widgetIconGlyph(cr, "⌨", x, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.kb_txt), x + 18, h, "Sans Bold 10", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn kbClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     // Count layouts
     var count: i32 = 1;
     for (w.kb_layouts) |ch| {
@@ -819,55 +1215,30 @@ fn ccMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 }
 
 fn ccUpdate(w: *Widget) void {
-    // Run command, capture first line of stdout into cc_out.
-    var tmpl: [32]u8 = std.mem.zeroes([32]u8);
-    _ = std.fmt.bufPrintZ(&tmpl, "/tmp/.zigshell-cc-XXXXXX", .{}) catch |err| {
-        std.log.err("tmpl cmd format error: {}", .{err});
-    };
-    const fd = c.mkstemp(@ptrCast(&tmpl));
-    if (fd < 0) return;
-    // Restrict temp file to owner-only (issue #19): mkstemp creates it with
-    // 0600 by default, but harden explicitly in case umask/impl differs.
-    _ = c.fchmod(fd, 0o600);
-    _ = c.close(fd);
-    var cmd: [320]u8 = std.mem.zeroes([320]u8);
     const cmd_slice = std.mem.sliceTo(&w.cmd, 0);
-    _ = std.fmt.bufPrintZ(&cmd, "sh -c '{s}' > '{s}' 2>/dev/null", .{ cmd_slice, std.mem.sliceTo(&tmpl, 0) }) catch |err| {
-        std.log.err("sh cmd format error: {}", .{err});
-        _ = c.unlink(&tmpl);
-        return;
-    };
-    _ = spawn(@ptrCast(&cmd));
-    const f = c.fopen(@ptrCast(&tmpl), "r") orelse {
-        _ = c.unlink(@ptrCast(&tmpl));
-        return;
-    };
-    defer {
-        _ = c.fclose(f);
-        _ = c.unlink(@ptrCast(&tmpl));
-    }
-    var buf: [128]u8 = std.mem.zeroes([128]u8);
-    if (c.fgets(@ptrCast(&buf), buf.len, f)) |line| {
-        const raw = std.mem.sliceTo(line, 0);
-        var end = raw.len;
-        while (end > 0 and (raw[end - 1] == '\n' or raw[end - 1] == '\r')) : (end -= 1) {}
-        const trimmed = raw[0..end];
-        const n = @min(trimmed.len, w.cc_out.len - 1);
-        @memcpy(w.cc_out[0..n], trimmed[0..n]);
-        w.cc_out[n] = 0;
-    }
+    // Run command and capture first line of stdout into cc_out.
+    // Use captureCmd which is C-based and avoids Zig std process issues.
+    var buf: [256]u8 = std.mem.zeroes([256]u8);
+    _ = captureCmd(cmd_slice, &buf);
+    const raw = std.mem.sliceTo(&buf, 0);
+    var end = raw.len;
+    while (end > 0 and (raw[end - 1] == '\n' or raw[end - 1] == '\r')) : (end -= 1) {}
+    const trimmed = raw[0..end];
+    const n = @min(trimmed.len, w.cc_out.len - 1);
+    @memcpy(w.cc_out[0..n], trimmed[0..n]);
+    w.cc_out[n] = 0;
 }
 
 fn ccDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
     if (w.cc_out[0] == 0) return;
-    _ = widgetText(cr, @ptrCast(&w.cc_out), x, h, "Sans 9", 0.85, 0.85, 0.88);
+    _ = widgetText(cr, @ptrCast(&w.cc_out), x, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn ccClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     ccUpdate(w);
     return true;
 }
@@ -883,21 +1254,24 @@ fn sdMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
 fn sdDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = w;
     _ = y;
-    widgetIconGlyph(cr, "▣", x + 4, h, 0.7, 0.8, 0.9);
+    widgetIconGlyph(cr, "▣", x + 4, h, theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn sdClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = x;
     _ = y;
-    if (btn != 1) return false;
+    if (btn != 272) return false;
     _ = spawn(@ptrCast(&w.cmd));
     return true;
 }
 
 // ---- World clock (plugin-worldclock) ----
 fn wcMeasure(w: *Widget, h: i32, cr: *c.cairo_t) i32 {
-    _ = cr;
     _ = h;
+    // Measure label + clock text widths for accurate layout
+    const lbl_w = widgetTextWidth(cr, @ptrCast(&w.wc_label), "Sans Bold 9");
+    const clk_w = widgetTextWidth(cr, @ptrCast(&w.clock_txt), "Sans 10");
+    if (lbl_w > 0 and clk_w > 0) return lbl_w + clk_w + 28;
     const lbl_len = std.mem.indexOfScalar(u8, &w.wc_label, 0) orelse w.wc_label.len;
     return @intCast(lbl_len * 7 + 56);
 }
@@ -929,8 +1303,8 @@ fn wcUpdate(w: *Widget) void {
 
 fn wcDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     _ = y;
-    _ = widgetText(cr, @ptrCast(&w.wc_label), x, h, "Sans Bold 9", 0.7, 0.8, 0.9);
-    _ = widgetText(cr, @ptrCast(&w.clock_txt), x + 28, h, "Sans 10", 0.85, 0.85, 0.85);
+    _ = widgetText(cr, @ptrCast(&w.wc_label), x, h, "Sans Bold 9", theme.current.text_dim_color[0], theme.current.text_dim_color[1], theme.current.text_dim_color[2]);
+    _ = widgetText(cr, @ptrCast(&w.clock_txt), x + 28, h, "Sans 10", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 // ---- Backlight (plugin-backlight) ----
@@ -1000,16 +1374,16 @@ fn blUpdate(w: *Widget) void {
 }
 
 fn blDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
-    widgetIconGlyph(cr, "☀", x, h, 0.9, 0.7, 0.2);
+    widgetIconGlyph(cr, "☀", x, h, theme.current.warning_color[0], theme.current.warning_color[1], theme.current.warning_color[2]);
     const bar_w: f64 = 26.0;
     const bar_h: f64 = 10.0;
     const bar_y: f64 = @floatFromInt(y + @divTrunc(h - 10, 2));
-    c.cairo_set_source_rgb(cr, 0.15, 0.15, 0.2);
+    theme.setSource(cr, theme.current.bg_gradient_end);
     c.cairo_rectangle(cr, @floatFromInt(x + 18), bar_y, bar_w, bar_h);
     c.cairo_fill(cr);
     if (w.bl_lvl >= 0) {
         const fill_w = (bar_w - 2.0) * @as(f64, @floatFromInt(w.bl_lvl)) / 100.0;
-        c.cairo_set_source_rgb(cr, 0.9, 0.7, 0.2);
+        theme.setSource(cr, theme.current.warning_color);
         c.cairo_rectangle(cr, @floatFromInt(x + 19), bar_y + 1, fill_w, bar_h - 2);
         c.cairo_fill(cr);
     }
@@ -1021,19 +1395,29 @@ fn blDraw(w: *Widget, cr: *c.cairo_t, x: i32, y: i32, h: i32) void {
     } else {
         std.mem.copyForwards(u8, &txt, "n/a");
     }
-    _ = widgetText(cr, @ptrCast(&txt), x + 48, h, "Sans 9", 0.8, 0.8, 0.82);
+    _ = widgetText(cr, @ptrCast(&txt), x + 48, h, "Sans 9", theme.current.text_color[0], theme.current.text_color[1], theme.current.text_color[2]);
 }
 
 fn blClick(w: *Widget, btn: u32, x: i32, y: i32) bool {
     _ = w;
     _ = x;
     _ = y;
-    if (btn == 1) {
+    if (btn == 272) {
         _ = spawn("brightnessctl set +5% &");
     } else if (btn == 3) {
         _ = spawn("brightnessctl set 5%- &");
     } else {
         return false;
+    }
+    return true;
+}
+
+fn blScroll(w: *Widget, dir: i32) bool {
+    _ = w;
+    if (dir > 0) {
+        _ = spawn("brightnessctl set +5% &");
+    } else if (dir < 0) {
+        _ = spawn("brightnessctl set 5%- &");
     }
     return true;
 }
@@ -1051,15 +1435,15 @@ pub fn widgetCreateDefault(out: *[MAX_WIDGETS]Widget) i32 {
     // config file but are omitted from the default bar to keep it slim.
     const defaults = [_]struct { wtype: WidgetType, side: u8 }{
         .{ .wtype = .workspaces, .side = 0 },
-        .{ .wtype = .toplevel_task, .side = 0 },
         .{ .wtype = .versions, .side = 0 },
         .{ .wtype = .cpu, .side = 1 },
         .{ .wtype = .mem, .side = 1 },
         .{ .wtype = .battery, .side = 1 },
         .{ .wtype = .volume, .side = 1 },
         .{ .wtype = .clock, .side = 1 },
-        .{ .wtype = .power, .side = 1 },
         .{ .wtype = .session, .side = 1 },
+        .{ .wtype = .wallpaper, .side = 1 },
+        .{ .wtype = .settings, .side = 1 },
     };
 
     for (defaults, 0..) |d, i| {
@@ -1081,6 +1465,7 @@ pub fn widgetCreateCompact(out: *[MAX_WIDGETS]Widget) i32 {
         .{ .wtype = .battery, .side = 1 },
         .{ .wtype = .volume, .side = 1 },
         .{ .wtype = .network, .side = 1 },
+        .{ .wtype = .settings, .side = 1 },
     };
 
     for (compact, 0..) |d, i| {
@@ -1092,44 +1477,10 @@ pub fn widgetCreateCompact(out: *[MAX_WIDGETS]Widget) i32 {
 }
 
 pub fn createWidget(wtype: WidgetType) Widget {
-    var w: Widget = undefined;
+    var w: Widget = std.mem.zeroes(Widget);
     w.wtype = wtype;
-    w.side = 0;
-    w.cached_w = 0;
-    w.priv = null;
-    w.ws_labels = std.mem.zeroes([64]u8);
-    w.cpu_prev_total = 0;
-    w.cpu_prev_idle = 0;
-    w.cpu_txt = std.mem.zeroes([32]u8);
-    w.mem_txt = std.mem.zeroes([32]u8);
-    w.temp_txt = std.mem.zeroes([32]u8);
-    w.disk_txt = std.mem.zeroes([32]u8);
     w.bat_lvl = -1;
-    w.bat_charging = false;
-    w.bat_txt = std.mem.zeroes([32]u8);
-    w.vol_mute = false;
-    w.vol_txt = std.mem.zeroes([32]u8);
-    w.net_txt = std.mem.zeroes([64]u8);
-    w.media_txt = std.mem.zeroes([96]u8);
-    w.media_playing = false;
-    w.clock_fmt = std.mem.zeroes([32]u8);
-    w.clock_txt = std.mem.zeroes([64]u8);
-    w.cmd = std.mem.zeroes([128]u8);
-    w.spacer_w = 20;
-    w.kb_layouts = std.mem.zeroes([256]u8);
-    w.kb_idx = 0;
-    w.kb_txt = std.mem.zeroes([32]u8);
-    w.cc_out = std.mem.zeroes([128]u8);
-    w.wc_tz = std.mem.zeroes([64]u8);
-    w.wc_label = std.mem.zeroes([16]u8);
     w.bl_lvl = -1;
-    w.net_rx_prev = 0;
-    w.net_tx_prev = 0;
-    w.net_iface = std.mem.zeroes([32]u8);
-    w.net_hist_rx = std.mem.zeroes([16]f64);
-    w.net_hist_tx = std.mem.zeroes([16]f64);
-    w.update_fn = null;
-    w.click_fn = null;
 
     switch (wtype) {
         .workspaces => {
@@ -1137,11 +1488,6 @@ pub fn createWidget(wtype: WidgetType) Widget {
             w.measure_fn = wsMeasure;
             w.draw_fn = wsDraw;
             w.click_fn = wsClick;
-        },
-        .toplevel_task => {
-            w.measure_fn = tlMeasure;
-            w.draw_fn = tlDraw;
-            w.click_fn = tlClick;
         },
         .launcher => {
             std.mem.copyForwards(u8, &w.cmd, "fuzzel &");
@@ -1187,6 +1533,7 @@ pub fn createWidget(wtype: WidgetType) Widget {
             w.measure_fn = volMeasure;
             w.draw_fn = volDraw;
             w.click_fn = volClick;
+            w.update_fn = volUpdate;
         },
         .network => {
             std.mem.copyForwards(u8, &w.net_txt, "-- KB/s");
@@ -1199,6 +1546,7 @@ pub fn createWidget(wtype: WidgetType) Widget {
             w.measure_fn = mediaMeasure;
             w.draw_fn = mediaDraw;
             w.click_fn = mediaClick;
+            w.update_fn = mediaUpdate;
         },
         .clock => {
             std.mem.copyForwards(u8, &w.clock_fmt, "%H:%M");
@@ -1219,7 +1567,7 @@ pub fn createWidget(wtype: WidgetType) Widget {
             w.click_fn = sessionClick;
         },
         .versions => {
-            std.mem.copyForwards(u8, &w.net_txt, "WL:? LC:?");
+            std.mem.copyForwards(u8, &w.ver_txt, "WL:? LC:?");
             w.measure_fn = versionsMeasure;
             w.draw_fn = versionsDraw;
             w.update_fn = versionsUpdate;
@@ -1265,6 +1613,17 @@ pub fn createWidget(wtype: WidgetType) Widget {
             w.draw_fn = blDraw;
             w.update_fn = blUpdate;
             w.click_fn = blClick;
+            w.scroll_fn = blScroll;
+        },
+        .settings => {
+            w.measure_fn = settingsMeasure;
+            w.draw_fn = settingsDraw;
+            w.click_fn = settingsClick;
+        },
+        .wallpaper => {
+            w.measure_fn = wallpaperMeasure;
+            w.draw_fn = wallpaperDraw;
+            w.click_fn = wallpaperClick;
         },
     }
 
@@ -1349,7 +1708,6 @@ pub fn widgetListIsHidden(list: *WidgetList, idx: i32) bool {
 pub fn widgetTypeName(wt: WidgetType) []const u8 {
     return switch (wt) {
         .workspaces => "Workspaces",
-        .toplevel_task => "Tasks",
         .launcher => "Launcher",
         .cpu => "CPU",
         .mem => "Memory",
@@ -1369,6 +1727,8 @@ pub fn widgetTypeName(wt: WidgetType) []const u8 {
         .backlight => "Backlight",
         .session => "Session",
         .versions => "Versions",
+        .settings => "Settings",
+        .wallpaper => "Wallpaper",
     };
 }
 
@@ -1447,7 +1807,6 @@ pub fn configLoadWidgets(allocator: std.mem.Allocator, path: []const u8) ?Loaded
 pub fn parseWidgetType(name: []const u8) ?WidgetType {
     const map = [_]struct { n: []const u8, t: WidgetType }{
         .{ .n = "workspaces", .t = .workspaces },
-        .{ .n = "toplevel", .t = .toplevel_task },
         .{ .n = "launcher", .t = .launcher },
         .{ .n = "cpu", .t = .cpu },
         .{ .n = "mem", .t = .mem },
@@ -1459,6 +1818,7 @@ pub fn parseWidgetType(name: []const u8) ?WidgetType {
         .{ .n = "media", .t = .media },
         .{ .n = "clock", .t = .clock },
         .{ .n = "power", .t = .power },
+        .{ .n = "wallpaper", .t = .wallpaper },
         .{ .n = "spacer", .t = .spacer },
         .{ .n = "kbindicator", .t = .kbindicator },
         .{ .n = "customcommand", .t = .customcommand },
@@ -1467,6 +1827,7 @@ pub fn parseWidgetType(name: []const u8) ?WidgetType {
         .{ .n = "backlight", .t = .backlight },
         .{ .n = "session", .t = .session },
         .{ .n = "versions", .t = .versions },
+        .{ .n = "settings", .t = .settings },
     };
     for (map) |entry| {
         if (std.mem.eql(u8, name, entry.n)) return entry.t;

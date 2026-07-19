@@ -165,6 +165,7 @@ fn linkDeps(root_mod: *std.Build.Module, b: *std.Build) void {
     root_mod.addIncludePath(b.path("src"));
     root_mod.addIncludePath(b.path("."));
     root_mod.addIncludePath(b.path("../shared/protocol"));
+    root_mod.addIncludePath(b.path("../../../libs/tinyfiledialogs"));
 }
 
 fn addProtocolSources(root_mod: *std.Build.Module, b: *std.Build, c_flags: []const []const u8) void {
@@ -183,6 +184,10 @@ fn addProtocolSources(root_mod: *std.Build.Module, b: *std.Build, c_flags: []con
     });
     root_mod.addCSourceFile(.{
         .file = b.path("../shared/protocol/xdg-shell-client-protocol.c"),
+        .flags = c_flags,
+    });
+    root_mod.addCSourceFile(.{
+        .file = b.path("../../../libs/tinyfiledialogs/tinyfiledialogs.c"),
         .flags = c_flags,
     });
 }

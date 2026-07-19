@@ -184,6 +184,8 @@ fn scanDesktopDirs() void {
             const name_slice = entryName(ent[0]);
             if (!std.mem.endsWith(u8, name_slice, ".desktop")) continue;
             var full: [1024]u8 = std.mem.zeroes([1024]u8);
+            const total = dir.len + name_slice.len;
+            if (total >= full.len) continue; // path too long, skip
             @memcpy(full[0..dir.len], dir);
             @memcpy(full[dir.len .. dir.len + name_slice.len], name_slice);
             full[dir.len + name_slice.len] = 0;

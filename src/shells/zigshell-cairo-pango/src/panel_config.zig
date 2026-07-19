@@ -26,6 +26,7 @@ pub const Config = struct {
     panel_height: i32 = 24,
     font_scale: f32 = 1.0,
     autohide_dock: bool = false,
+    autohide_panel: bool = false,
     dock_icon_size: i32 = 28,
     pins: [256]u8 = std.mem.zeroes([256]u8),
     pins_len: usize = 0,
@@ -112,6 +113,7 @@ pub const Config = struct {
             cfg.panel_height = parseI32(opts[0..opts_len], "height", cfg.panel_height);
             cfg.font_scale = parseF32(opts[0..opts_len], "font_scale", cfg.font_scale);
             cfg.autohide_dock = parseBool(opts[0..opts_len], "autohide_dock", cfg.autohide_dock);
+            cfg.autohide_panel = parseBool(opts[0..opts_len], "autohide_panel", cfg.autohide_panel);
         } else if (std.mem.eql(u8, section, "dock")) {
             cfg.dock_icon_size = parseI32(opts[0..opts_len], "icon_size", cfg.dock_icon_size);
         } else if (std.mem.eql(u8, section, "dock.pins")) {
@@ -150,6 +152,7 @@ pub const Config = struct {
         _ = c.fprintf(f, "height = %d\n", global.panel_height);
         _ = c.fprintf(f, "font_scale = %.3f\n", global.font_scale);
         _ = c.fprintf(f, "autohide_dock = %s\n", @as([*:0]const u8, @ptrCast(if (global.autohide_dock) "true" else "false")));
+        _ = c.fprintf(f, "autohide_panel = %s\n", @as([*:0]const u8, @ptrCast(if (global.autohide_panel) "true" else "false")));
         _ = c.fprintf(f, "\n[dock]\n");
         _ = c.fprintf(f, "icon_size = %d\n", global.dock_icon_size);
         _ = c.fprintf(f, "\n[dock.pins]\n");
@@ -231,6 +234,8 @@ fn widgetTypeToName(wtype: panel_mod.WidgetType) ?[]const u8 {
         .{ .n = "showdesktop", .t = .showdesktop },
         .{ .n = "worldclock", .t = .worldclock },
         .{ .n = "backlight", .t = .backlight },
+        .{ .n = "session", .t = .session },
+        .{ .n = "versions", .t = .versions },
     };
     for (map) |e| if (e.t == wtype) return e.n;
     return null;
